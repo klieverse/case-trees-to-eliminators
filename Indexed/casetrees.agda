@@ -4,6 +4,7 @@ module Indexed.casetrees where
 open import Indexed.datatypes
 open import Non_Indexed.telescope
 open import Indexed.unify
+open import lib
 
 open import Level renaming (zero to lzero; suc to lsuc)
 open import Agda.Builtin.Sigma
@@ -15,76 +16,133 @@ open import Data.Fin using (Fin; fromℕ<; toℕ) renaming (zero to fzero; suc t
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; trans; sym; cong; subst)
 open import Data.Vec using (Vec; []; _∷_)
 
--- types in telescope of constructor C
 private variable
-  i j k : ℕ
-  IΔ    : Telescope j
+  ℓ   : Level
+  i n m : ℕ
+  IΔ    : Telescope i
 
-vecTel : {IΔ : Telescope j} (d₁ d₂ : ⟦ IΔ ⟧telD) → Telescope (suc j) 
-vecTel {j = zero}  {IΔ = nil } d₁ d₂ = e ∈ d₁ ≡ d₂ , nil 
-vecTel {j = suc j} {IΔ = cons D E} (d₁ , ds₁) (d₂ , ds₂) = e ∈ (d₁ ≡ d₂) , vecTel (subst (λ d → ⟦ E d ⟧telD) e ds₁) ds₂
+-- telescope of equivalent indices
+vecTel : {IΔ : Telescope n} (d₁ d₂ : ⟦ IΔ ⟧telD) → Telescope n
+vecTel {IΔ = nil     } tt tt = nil 
+vecTel {IΔ = cons D E} (d₁ , ds₁) (d₂ , ds₂) = e ∈ (d₁ ≡ d₂) , vecTel (subst (λ d → ⟦ E d ⟧telD) e ds₁) ds₂
 
-conTel : {IΔ : Telescope j}(D : DataDesc i IΔ)(C : ConDesc IΔ k)(d : ⟦ IΔ ⟧telD) → Telescope (k + (suc j))
-conTel D (one' d') d = vecTel d' d
-conTel D (Σ' S C) d = s ∈ S , conTel D (C s) d
-conTel D (×' d' C) d = μD ∈ μ D d' , conTel D C d
+-- telescope of constructor arguments for constructor description C on X
+conTel : {IΔ : Telescope n}(X : ⟦ IΔ ⟧telD → Set)(C : ConDesc IΔ m)(d : ⟦ IΔ ⟧telD) → Telescope (m + n)
+conTel X (one' d') d = vecTel d' d
+conTel X (Σ' S C) d = s ∈ S , conTel X (C s) d
+conTel X (×' d' C) d = x ∈ X d' , conTel X C d
 
-telToVec : {IΔ : Telescope j}{d₁ d₂ : ⟦ IΔ ⟧telD}
+-- telescope of constructor arguments for constructor description C on X
+telToVec : {IΔ : Telescope n}{d₁ d₂ : ⟦ IΔ ⟧telD}
     → (t : ⟦ vecTel d₁ d₂ ⟧telD) → d₁ ≡ d₂
-telToVec {j = zero}  {IΔ = nil } (t , tt) = t 
-telToVec {j = suc j} {IΔ = cons D E} {d₁} {d₂} (t , ts) = subst (λ ds₂ → (proj₁ d₁ , proj₂ d₁) ≡ (proj₁ d₂ , ds₂)) (telToVec ts) 
-    (J (λ d₂ t → (proj₁ d₁ , snd d₁) ≡ (d₂ , subst (λ d → ⟦ E d ⟧telD) t (snd d₁))) refl t) 
+telToVec {IΔ = nil} tt = refl 
+telToVec {IΔ = cons D E} (t , ts) = Σ-create t (telToVec ts) 
 
-telToCon : {D : DataDesc i IΔ}{C : ConDesc IΔ k}{d : ⟦ IΔ ⟧telD}
-    → (t : ⟦ conTel D C d ⟧telD) → ⟦ C ⟧c (μ D) d
+telToCon : {X : ⟦ IΔ ⟧telD → Set}{C : ConDesc IΔ n}{d : ⟦ IΔ ⟧telD}
+    → (t : ⟦ conTel X C d ⟧telD) → ⟦ C ⟧c X d
 telToCon {C = one' d'} {d} v = telToVec v
 telToCon {C = Σ' S C} (s , t) = s , telToCon t
-telToCon {C = ×' d' C} (μD , t) = μD , telToCon t
+telToCon {C = ×' d' C} (x , t) = x , telToCon t
 
-vecToTel : {IΔ : Telescope j}{d₁ d₂ : ⟦ IΔ ⟧telD}
+-- instantiation of conTel from interpretation of constructor interpretation on X
+vecToTel : {IΔ : Telescope n}{d₁ d₂ : ⟦ IΔ ⟧telD}
     → d₁ ≡ d₂ → ⟦ vecTel d₁ d₂ ⟧telD
-vecToTel {j = zero}  {IΔ = nil } e = e , tt
-vecToTel {j = suc j} {IΔ = cons S E} {d₁} {d₂} e = cong proj₁ e , vecToTel {d₁ = subst (λ d → ⟦ E d ⟧telD) (cong (λ r → proj₁ r) e) (snd d₁)} 
-    {d₂ = snd d₂} (J (λ d₂ e → subst (λ d → ⟦ E d ⟧telD) (cong (λ r → proj₁ r) e) (snd d₁) ≡ snd d₂) refl e) 
+vecToTel {IΔ = nil } e = tt
+vecToTel {IΔ = cons S E} e = linvΣ₁ e , vecToTel (linvΣ₂ e) 
     
-conToTel : {D : DataDesc i IΔ}{C : ConDesc IΔ k}{d : ⟦ IΔ ⟧telD}
-    → ⟦ C ⟧c (μ D) d → ⟦ conTel D C d ⟧telD
+conToTel : {X : ⟦ IΔ ⟧telD → Set}{C : ConDesc IΔ n}{d : ⟦ IΔ ⟧telD}
+    → ⟦ C ⟧c X d → ⟦ conTel X C d ⟧telD
 conToTel {C = one' v} e = vecToTel e
 conToTel {C = Σ' S C} (s , t) = s , conToTel t 
-conToTel {C = ×' _ C} (μD , t) = μD , conToTel t
+conToTel {C = ×' _ C} (x , t) = x , conToTel t
 
-≡Cong : {D : Set} {DS : D → Set} {x₁ x₂ : Σ D DS} (e : x₁ ≡ x₂) 
-        → subst (λ ds₂ → x₁ ≡ (proj₁ x₂ , ds₂)) 
-          (J (λ d₃ e₁ → subst DS (cong (λ r → proj₁ r) e₁) (proj₂ x₁) ≡ snd d₃) refl e)
-          (J (λ d₃ t → x₁ ≡ (d₃ , subst DS t (proj₂ x₁))) refl (cong (λ r → proj₁ r) e))
-          ≡ e
-≡Cong {D} {DS} {x₁} {x₂} e = J {x = x₁} (λ x₂ e → subst (λ ds₂ → x₁ ≡ (proj₁ x₂ , ds₂)) 
-          (J (λ d₃ e₁ → subst DS (cong (λ r → proj₁ r) e₁) (proj₂ x₁) ≡ snd d₃) refl e)
-          (J (λ d₃ t → x₁ ≡ (d₃ , subst DS t (proj₂ x₁))) refl (cong (λ r → proj₁ r) e))
-          ≡ e) refl e 
-
-telToVec∘vecToTel : {IΔ : Telescope j}{d₁ d₂ : ⟦ IΔ ⟧telD}
+-- proof of section-retraction pair
+telToVec∘vecToTel : {IΔ : Telescope n}{d₁ d₂ : ⟦ IΔ ⟧telD}
     → (e : d₁ ≡ d₂) → telToVec (vecToTel e) ≡ e
-telToVec∘vecToTel {j = zero}  {IΔ = nil } e = refl
-telToVec∘vecToTel {j = suc j} {IΔ = cons D E} {d₁ = (d₁ , ds₁)} {d₂ = (d₂ , ds₂)} e 
-  = subst (λ e' → subst (λ ds₃ → (d₁ , ds₁) ≡ (d₂ , ds₃)) e' (J (λ d₃ t → (d₁ , ds₁) ≡ (d₃ , subst (λ d → ⟦ E d ⟧telD) t ds₁)) refl (cong (λ r → proj₁ r) e)) ≡ e) 
-            (sym (telToVec∘vecToTel (J (λ d₃ e₁ → subst (λ d → ⟦ E d ⟧telD) (cong (λ r → proj₁ r) e₁) ds₁ ≡ snd d₃) refl e))) 
-            (≡Cong e)
+telToVec∘vecToTel {IΔ = nil } refl = refl
+telToVec∘vecToTel {IΔ = cons D E} e 
+  = subst (λ e' → Σ-create (linvΣ₁ e) e' ≡ e) (sym (telToVec∘vecToTel (linvΣ₂ e))) (isLinvΣ e) 
 
-telToCon∘conToTel : {D : DataDesc i IΔ}{C : ConDesc IΔ k}{d : ⟦ IΔ ⟧telD}
-    → (t : ⟦ C ⟧c (μ D) d) → telToCon (conToTel t) ≡ t 
+telToCon∘conToTel : {X : ⟦ IΔ ⟧telD → Set}{C : ConDesc IΔ n}{d : ⟦ IΔ ⟧telD}
+    → (t : ⟦ C ⟧c X d) → telToCon (conToTel t) ≡ t 
 telToCon∘conToTel {C = one' v} e = telToVec∘vecToTel e
 telToCon∘conToTel {C = Σ' S C} (s , t) = cong (s ,_) (telToCon∘conToTel t)
-telToCon∘conToTel {C = ×' _ C} (μD , t) = cong (μD ,_) (telToCon∘conToTel t)
+telToCon∘conToTel {C = ×' _ C} (x , t) = cong (x ,_) (telToCon∘conToTel t)
 
-data CaseTree {ℓ : Level} : {i : ℕ}(Δ : Telescope i)(T : ⟦ Δ ⟧telD → Set ℓ) → Set (lsuc ℓ) where
-    leaf : {i : ℕ}{Δ : Telescope i}{T : ⟦ Δ ⟧telD → Set ℓ} → 
-            (t : (d : ⟦ Δ ⟧telD) → T d) → CaseTree Δ T
-    node : {j Δn : ℕ}{Δ : Telescope (suc Δn)}{T : ⟦ Δ ⟧telD → Set ℓ}
-            {IΔ : Telescope i}{D : DataDesc (suc j) IΔ}
-            → {i : ℕ}
-            → (e : Δ [ i ]∶Σ[ ⟦ IΔ ⟧telD ] (μ D))
-            → (f : (target : Fin (suc j)) 
-                → Σ[ u ∈ Unification (expandTel Δ (conTel D (proj₂ (D target))) (λ d x → ⟨ target , telToCon x ⟩ ) e)] 
-                        (CaseTree (proj₂ (unifyTel u)) (λ t → expandSort e T (linvUnify u t))))
-            → CaseTree Δ T
+-- representation of a case tree
+data CaseTree (Δ : Telescope n)(T : ⟦ Δ ⟧telD → Set ℓ) : Set (lsuc ℓ) where
+    leaf : (t : (args : ⟦ Δ ⟧telD) → T args) → CaseTree Δ T
+    node : {k d : ℕ}{IΔ : Telescope d}{D : DataDesc m IΔ}
+      → (p : Δ [ k ]∶Σ[ ⟦ IΔ ⟧telD ] (μ D))
+      → (bs : (con : Fin m) 
+        -- add unification algorithm for indices
+        → Σ[ u ∈ Unification (expandTel Δ (conTel (μ D) (proj₂ (D con))) 
+            (λ d args → ⟨ con , telToCon args ⟩ ) p)] 
+          (CaseTree (proj₂ (unifyTel u)) (λ args → expandSort p T (unify' u args))))
+      → CaseTree Δ T
+
+-- example flip function
+ΔFlip : {A : Set} (w : A) → Telescope 8 
+ΔFlip {A = A} w = x ∈ A , y ∈ A , z ∈ A , t ∈ μ (≡D w) (x , tt) , b ∈ μ (≡D y) (z , tt) , l ∈ μ (≡D w) (y , tt) , r ∈ μ (≡D x) (z , tt) ,
+            s ∈ μ (SquareD w) (x , y , z , t , b , l , r , tt) , nil
+
+TFlip : {A : Set} (w : A) → ⟦ ΔFlip w ⟧telD → Set 
+TFlip w (x , y , z , t , b , l , r , _) = μ (SquareD w) (y , x , z , l , r , t , b , tt)
+
+CTFlip : {A : Set} (w : A) → CaseTree (ΔFlip w) (TFlip w)
+CTFlip {A} w = node (there (λ x → there (λ y → there (λ z → there (λ t → there (λ b → there (λ l → there (λ r → here (x , y , z , t , b , l , r , tt))))))))) (λ where 
+  (fzero) → unifyFlip , leaf (λ _ → ids w)) where 
+  
+  Δsplit₆ : Telescope 2 
+  Δsplit₆ = r ∈ μ (≡D w) (w , tt) , ewy ∈ idp w ≡ r , nil
+  
+  unifyFlip₆ : Unification Δsplit₆
+  unifyFlip₆ = Usolution {A = λ a → μ (≡D a) (a , tt)} (here (w , idp w)) (UEnd nil)
+
+  Δsplit₅ : Telescope 4 
+  Δsplit₅ = l ∈ μ (≡D w) (w , tt) , r ∈ μ (≡D w) (w , tt) ,
+              ewy ∈ idp w ≡ l , _
+  
+  unifyFlip₅ : Unification Δsplit₅
+  unifyFlip₅ = UReorder (fsuc fzero) fzero (λ _ → _ , there (λ l → here tt))
+                  (Usolution {A = λ a → μ (≡D a) (a , tt)} (here (w , idp w)) unifyFlip₆) 
+
+  Δsplit₄ : Telescope 6 
+  Δsplit₄ = b ∈ μ (≡D w) (w , tt) , l ∈ μ (≡D w) (w , tt) , r ∈ μ (≡D w) (w , tt) ,
+              ewy ∈ idp w ≡ b , _
+  
+  unifyFlip₄ : Unification Δsplit₄
+  unifyFlip₄ = UReorder (fsuc fzero) fzero (λ _ → _ , there (λ b → there (λ l → here tt)))
+                  (Usolution {A = λ a → μ (≡D a) (a , tt)} (here (w , idp w)) unifyFlip₅) 
+
+  Δsplit₃ : Telescope 8 
+  Δsplit₃ = t ∈ μ (≡D w) (w , tt) , b ∈ μ (≡D w) (w , tt) , l ∈ μ (≡D w) (w , tt) , r ∈ μ (≡D w) (w , tt) ,
+              ewy ∈ idp w ≡ t , _
+  
+  unifyFlip₃ : Unification Δsplit₃
+  unifyFlip₃ = UReorder (fsuc fzero) fzero (λ _ → _ , there (λ t → there (λ b → there (λ l → here tt))))
+                  (Usolution {A = λ a → μ (≡D a) (a , tt)} (here (w , idp w)) unifyFlip₄) 
+
+  Δsplit₂ : Telescope 10 
+  Δsplit₂ = z ∈ A , t ∈ μ (≡D w) (w , tt) , b ∈ μ (≡D w) (z , tt) , l ∈ μ (≡D w) (w , tt) , r ∈ μ (≡D w) (z , tt) ,
+              ewy ∈ w ≡ z , _
+  
+  unifyFlip₂ : Unification Δsplit₂
+  unifyFlip₂ = UReorder (fsuc fzero) fzero (λ _ → _ , there (λ z → there (λ t → there (λ b → there (λ l → here tt))))) 
+                  (Usolution {X = ⊤} {A = λ a → A} (here (tt , w)) unifyFlip₃) 
+
+  Δsplit₁ : Telescope 12 
+  Δsplit₁ = y ∈ A , z ∈ A , t ∈ μ (≡D w) (w , tt) , b ∈ μ (≡D y) (z , tt) , l ∈ μ (≡D w) (y , tt) , r ∈ μ (≡D w) (z , tt) ,
+              ewy ∈ w ≡ y , _ 
+  
+  unifyFlip₁ : Unification Δsplit₁
+  unifyFlip₁ = UReorder (fsuc fzero) fzero (λ _ → _ , there (λ y → there (λ z → there (λ t → there (λ b → there (λ l → here tt)))))) 
+                  (Usolution {X = ⊤} {A = λ a → A} (here (tt , w)) unifyFlip₂) 
+
+  Δsplit : Telescope 14 
+  Δsplit = x ∈ A , y ∈ A , z ∈ A , t ∈ μ (≡D w) (x , tt) , b ∈ μ (≡D y) (z , tt) , l ∈ μ (≡D w) (y , tt) , r ∈ μ (≡D x) (z , tt) ,
+    ewx ∈ w ≡ x , _
+
+  unifyFlip : Unification Δsplit
+  unifyFlip = UReorder (fsuc fzero) fzero (λ _ → _ , there (λ y → there (λ z → there (λ t → there (λ b → there (λ l → there (λ r → here tt)))))))
+                (Usolution {X = ⊤} {A = λ a → A} (here (tt , w)) unifyFlip₁)
