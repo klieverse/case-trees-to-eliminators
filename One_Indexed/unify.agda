@@ -4,6 +4,7 @@ module One_Indexed.unify where
 open import Non_Indexed.datatypes as NI
 open import One_Indexed.datatypes as OI
 open import Non_Indexed.telescope
+open import lib
 open import One_Indexed.unification
 
 open import Level renaming (zero to lzero; suc to lsuc)
@@ -135,7 +136,7 @@ CTSucTel X = n ∈ NI.μ NI.NatD , m ∈ NI.μ NI.NatD , x ∈ X , v ∈ OI.μ (
         , e ∈ _≡_ {A = NI.μ NI.NatD} (NI.suc' m) (NI.suc' n) , nil
 
 UnifySuc : (X : Set) → Unification (CTSucTel X)
-UnifySuc X = UReorder (fsuc (fsuc fzero)) fzero (λ x → _ , (there (λ _ → there (λ _ → here tt)))) 
+UnifySuc X = UReorder (f2) (f0) (λ x → _ , (there (λ _ → there (λ _ → here tt)))) 
             (UInjectivity (there (λ n → there (λ m → here (m , n)))) (λ _ → refl) (λ _ → refl) 
                 (Usolution₁ {X = ⊤} (there (λ n → here (tt , n))) 
                     (UEnd (n ∈ NI.μ NI.NatD , x ∈ X , v ∈ OI.μ (VecD X) (n , tt) , nil))))

@@ -6,12 +6,21 @@ open import Level renaming (zero to lzero; suc to lsuc)
 open import Data.Product
 open import Data.Sum
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; trans; sym; cong; subst)
+open import Data.Fin using (Fin) renaming (zero to fzero; suc to fsuc)
+
+pattern f0 = fzero
+pattern f1 = fsuc fzero
+pattern f2 = fsuc (fsuc fzero)
+pattern f3 = fsuc (fsuc (fsuc fzero))
+pattern f4 = fsuc (fsuc (fsuc (fsuc fzero)))
+pattern f5 = fsuc (fsuc (fsuc (fsuc (fsuc fzero))))
+pattern f6 = fsuc (fsuc (fsuc (fsuc (fsuc (fsuc fzero)))))
 
 J : ∀ {ℓ ℓ'} {A : Set ℓ} {x : A} (P : (y : A) → x ≡ y → Set ℓ') → (p : P x refl) → {y : A} (e : x ≡ y) → P y e
 J P p refl = p
 
 J' : ∀ {ℓ ℓ'} {A : Set ℓ} {x : A} 
-  → (P : (y : A) → x ≡ y → Set ℓ')
+  → (P : (y : A) → x ≡ y → Set ℓ') 
   → {y : A} (e : x ≡ y) 
   → (p : P y e) 
   → P x refl
@@ -52,7 +61,6 @@ projΠ₂ e = cong proj₂ e
 create∘projΠ : ∀ {ℓ ℓ'} {A : Set ℓ} {B : Set ℓ'} {a₁ a₂ : A} {b₁ b₂ : B} (e : (a₁ , b₁) ≡ (a₂ , b₂)) 
     → Π-create (projΠ₁ e) (projΠ₂ e) ≡ e 
 create∘projΠ e = J (λ x e → Π-create (projΠ₁ e) (projΠ₂ e) ≡ e) refl e 
-
 
 Σ-create : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'} {a₁ a₂ : A} {b₁ : B a₁} {b₂ : B a₂} (ea : a₁ ≡ a₂) 
                 (eds : subst B ea b₁ ≡ b₂) → (a₁ , b₁) ≡ (a₂ , b₂)
@@ -267,26 +275,23 @@ subst→cong∘cong→subst : ∀ {ℓ ℓ' ℓ''} {A : Set ℓ} {B : Set ℓ'} 
 subst→cong∘cong→subst {f = f} {P} {s} {t} e u = J (λ t e → (v : P (f t)) → (e' : subst P (cong f e) u ≡ v)
       → subst→cong f P e u v (cong→subst f P e u v e') ≡ e') (λ v e' → refl) e 
 
--- cong (λ ntt → suc₁ (proj₁ ntt) , tt) (cong (_, tt) e₁) ≡ cong (λ _ → suc₁ n , tt) (cong (_, tt) e₁)
--- e₃ : subst (λ n₁ → μ (VecD X) (n₁ , tt)) e₁ xs ≡ ys
--- e₂ : x ≡ y
--- p : cong (λ n₁ → suc₁ n₁ , tt) e₁ ≡ cong (λ _ → suc₁ n , tt) e₁
--- e₁ : n ≡ n
-
--- cong→cong : ∀ {ℓ ℓ' ℓ''} {A : Set ℓ} {B : Set ℓ'} {C : Set ℓ''} (f : A → B) (g : B → C)
---   {s t : A} (e : s ≡ t)
---   → cong (λ x → g (f x)) e ≡ cong (λ x → g (f x)) e 
---   → cong g (cong f e) ≡ cong g (cong f e)
--- cong→cong f g {s} {t} = J (λ t e → cong (λ x → g (f x)) e ≡ cong (λ x → g (f x)) e → cong g (cong f e) ≡ cong g (cong f e)) (λ x → x) 
-
--- cong→cong : ∀ {ℓ ℓ' ℓ''} {A : Set ℓ} {B : Set ℓ'} {C : Set ℓ''} (f : A → B) (g : B → C)
---   {s : A} (e : s ≡ s)
---   → cong (λ x → g (f x)) e ≡ cong (λ _ → g (f s)) e 
---   → cong g (cong f e) ≡ cong (λ _ → g (f s)) (cong f e)
--- cong→cong f g {s} e = J (λ s e → cong (λ x → g (f x)) e ≡ {!   !} → cong g (cong f e) ≡ {!  cong (λ _ → g (f s)) (cong f e) !}) {!   !} e -- J (λ s e → cong (λ x → g (f x)) e ≡ cong (λ _ → g (f ?)) e → cong g (cong f e) ≡ cong (λ _ → g (f s)) (cong f e)) ? --  (λ x → x) 
+coerce : ∀ {ℓ} {X Y : Set ℓ } → (X ≡ Y) → X → Y
+coerce e x = J (λ y p → y) x e
 
 
+Jextra : ∀ {ℓ ℓ'} {A B : Set ℓ} {x : A} (f : A → B) (f' : B → A) (f'∘f : f' (f x) ≡ x)
+  (P : (x' : A) → f' (f x) ≡ x' → Set ℓ') → (p : P (f' (f x)) refl) → P x f'∘f
+Jextra f f' f'∘f P p = J (λ x e → P x e) p f'∘f
 
+Jextra' : ∀ {ℓ ℓ'} {A B : Set ℓ} {x : A} (f : A → B) (f' : B → A) (f'∘f : f' (f x) ≡ x)
+  (P : (x' : A) → f' (f x) ≡ x' → Set ℓ') → (p : P x f'∘f) → P (f' (f x)) refl
+Jextra' f f' f'∘f P p = J' (λ x e → P x e) f'∘f p
+
+subst∘subst : ∀ {ℓ} {A B : Set ℓ} {x y : A} → (e : x ≡ y) 
+  (f : A → B) (f' : B → A) (f'∘f : (a : A) → f' (f a) ≡ a)
+  → subst (λ e → e ≡ y) (f'∘f x) (subst (λ e → f' (f x) ≡ e) (f'∘f y) (cong f' (cong f e))) ≡ e
+subst∘subst {x = x} refl f f' f'∘f = Jextra f f' (f'∘f x) (λ x' e' → subst (λ e → e ≡ x') e'
+      (subst (_≡_ (f' (f x))) e' refl) ≡ refl) refl
 
 data Square {ℓ} {A : Set ℓ} {a : A} : {b c d : A} (p : a ≡ b) (q : c ≡ d) (r : a ≡ c) (s : b ≡ d) → Set ℓ where
   idS : Square {a = a} refl refl refl refl
@@ -308,6 +313,11 @@ flipSquare : ∀ {ℓ} {A : Set ℓ} {w x y z : A} (t : w ≡ x) (b : y ≡ z) (
   → subst (λ wy → proj₁ wy ≡ proj₂ wy) (Π-create l r) t ≡ b
 flipSquare t b l r p = createSquare' l r t b (flipS t b l r (createSquare t b l r p)) 
 
+flipSquare∘flipSquare : ∀ {ℓ} {A : Set ℓ} {w x y z : A} (t : w ≡ x) (b : y ≡ z) (l : w ≡ y) (r : x ≡ z) 
+  → (p : subst (λ wy → proj₁ wy ≡ proj₂ wy) (Π-create t b) l ≡ r) 
+  → flipSquare l r t b (flipSquare t b l r p) ≡ p
+flipSquare∘flipSquare refl refl refl r refl = refl 
+
 Π-create→cong : ∀ {ℓ ℓ'} {A : Set ℓ} {X Y : Set ℓ'} {a b : X → Y} {f' : A → X}
   {u v : A}(e : u ≡ v) (r : a (f' u) ≡ b (f' u)) (s : a (f' v) ≡ b (f' v)) 
   → subst (λ ab → proj₁ ab ≡ proj₂ ab) (Π-create (cong (λ xs₁ → a (f' xs₁)) e) 
@@ -328,3 +338,14 @@ flipSquare t b l r p = createSquare' l r t b (flipS t b l r (createSquare t b l 
     → subst (λ ab → proj₁ ab ≡ proj₂ ab) (Π-create (cong (λ xs₁ → a (f' xs₁)) e) 
       (cong (λ xs₁ → b (f' xs₁)) e)) r ≡ s) 
       (λ s e → e) e
+
+Π-cong→create∘Π-create→cong : ∀ {ℓ ℓ'} {A : Set ℓ} {X Y : Set ℓ'} {a b : X → Y} {f' : A → X}
+  {u v : A}(e : u ≡ v) (r : a (f' u) ≡ b (f' u)) (s : a (f' v) ≡ b (f' v)) 
+  → (xs : subst (λ ab → proj₁ ab ≡ proj₂ ab) (Π-create (cong (λ xs₁ → a (f' xs₁)) e) 
+      (cong (λ xs₁ → b (f' xs₁)) e)) r ≡ s) 
+  → Π-cong→create {a = a} {b} {f'} e r s (Π-create→cong {a = a} {b} {f'} e r s xs) ≡ xs
+Π-cong→create∘Π-create→cong {a = a} {b} {f'} e r = J (λ v e → (s : a (f' v) ≡ b (f' v)) 
+    → (xs : subst (λ ab → proj₁ ab ≡ proj₂ ab) (Π-create (cong (λ xs₁ → a (f' xs₁)) e) 
+        (cong (λ xs₁ → b (f' xs₁)) e)) r ≡ s) 
+    → Π-cong→create {a = a} {b} {f'} e r s (Π-create→cong {a = a} {b} {f'} e r s xs) ≡ xs) 
+      (λ s e → refl) e

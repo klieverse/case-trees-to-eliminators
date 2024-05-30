@@ -6,6 +6,7 @@ open import Non_Indexed.telescope
 open import One_Indexed.datatypes
 open import One_Indexed.casetrees
 open import One_Indexed.unify
+open import lib
 
 open import Level renaming (zero to lzero; suc to lsuc)
 open import Data.Product 
@@ -20,18 +21,18 @@ open import Data.Nat.Properties
 open import Data.Fin using (Fin; fromℕ<; fromℕ; toℕ; raise) renaming (zero to fzero; suc to fsuc)
 
 private variable
-  ℓ   : Level
-  n m : ℕ
+  ℓ : Level
+  n : ℕ
 
 -- evaluation function of a case tree ct
 eval : {Δ : Telescope n}{T : ⟦ Δ ⟧telD → Set ℓ} → 
   (ct : CaseTree Δ T) (args : ⟦ Δ ⟧telD) 
   → T args 
 eval (leaf f) args = f args
-eval {Δ = Δ} {T} (node {IΔ = IΔ} {D = D} p bs) args 
+eval {Δ = Δ} {T} (node {is = is} {D = D} p bs) args 
   = case-μ D (λ d' x' → (d' , x') ≡ (d , ret) → T args) cs d ret refl where 
 
-    d : ⟦ IΔ ⟧Vec 
+    d : ⟦ is ⟧Vec 
     d = proj₁ (args Σ[ p ])
 
     -- value that we split on
@@ -40,22 +41,27 @@ eval {Δ = Δ} {T} (node {IΔ = IΔ} {D = D} p bs) args
 
     -- from a constructor instantiation that is equivalent to the value 
     -- that we split on get the return type
-    cs : (d' : ⟦ IΔ ⟧Vec) (x : ⟦ D ⟧ (μ D) d') → (d' , ⟨ x ⟩) ≡ (d , ret) → T args
-    cs d' (k , xs) e = shrinkExpand p (conToTel xs) q T args (sym e) r where
+    cs : (d' : ⟦ is ⟧Vec) (x : ⟦ D ⟧ (μ D) d') → (d' , ⟨ x ⟩) ≡ (d , ret) → T args
+    cs d' (k , xs) e = subst T (subst (λ xs → shrink p xs ≡ args) (sym (unify'∘unify (proj₁ (bs k)) (expand p (λ ys → ⟨ k , telToCon ys ⟩) args
+         (conToTel (subst (⟦ proj₂ (D k) ⟧c (μ D)) qd xs)) q))) (shrink∘expand p args _ q)) r where 
+    
+      qd : d' ≡ d 
+      qd = cong proj₁ e
 
-      q : ⟨ k , telToCon (conToTel xs) ⟩ ≡ ⟨ k , xs ⟩
-      q = cong (λ x → ⟨ k , x ⟩) (telToCon∘conToTel xs)
-
+      q : ⟨ k , telToCon (conToTel (subst (⟦ proj₂ (D k) ⟧c (μ D)) qd xs)) ⟩ ≡ ret 
+      q = J (λ dret e → ⟨ k , telToCon (conToTel (subst (⟦ proj₂ (D k) ⟧c (μ D)) (cong proj₁ e) xs)) ⟩ ≡ (proj₂ dret)) 
+            (cong (λ x → ⟨ k , x ⟩) (telToCon∘conToTel xs)) e
+      
       -- recursively evaluate the case tree
-      r : expandSort p T (expand p (conToTel xs) q args (sym e))
-      r = subst (expandSort p T) (unify'∘unify (proj₁ (bs k)) (expand p (conToTel xs) q args (sym e))) 
-              (eval (proj₂ (bs k)) (unify (proj₁ (bs k)) (expand p (conToTel xs) q args (sym e))))
-
+      r : T (shrink p (unify' (proj₁ (bs k)) (unify (proj₁ (bs k)) (expand p (λ ys → ⟨ k , telToCon ys ⟩) args
+              (conToTel (subst (⟦ proj₂ (D k) ⟧c (μ D)) qd xs)) q)))) 
+      r = eval (proj₂ (bs k)) (unify (proj₁ (bs k)) (expand p (λ ys → ⟨ k , telToCon ys ⟩) args 
+          (conToTel (subst (⟦ proj₂ (D k) ⟧c (μ D)) qd xs)) q))
 
 -- example translation head function
-≡Head : {X : Set}{x : X}(n : NI.μ NI.NatD)(v : μ (VecD X) (NI.suc' n , tt)) → head' X n v ≡ x 
-        → eval (CTHeadRoot X) (n , v , tt) ≡ x 
-≡Head n (cons' n x xs) refl = refl 
+≡Head : {X : Set}(n : NI.μ NI.NatD)(v : μ (VecD X) (NI.suc' n , tt)) 
+        → eval (CTHeadRoot X) (n , v , tt) ≡ head' X n v
+≡Head n (cons' n x xs) = refl 
 
 -- example translation antisym function
 antisym-tel : (n m : NI.μ NI.NatD)(x : μ ≤D (n , m , tt))(y : μ ≤D (m , n , tt)) → ⟦ antisymΔ ⟧telD
@@ -64,12 +70,11 @@ antisym-tel n m x y = n , m , x , y , below antisymPx createp ((n , m , tt)) x ,
         createp : (d : ⟦ ≤Tel ⟧Vec) → (x : μ ≤D d) → Below antisymPx d x → antisymPx d x
         createp d x b ( _ , _ , _ , y , _ ) refl = eval CTantisym (proj₁ d , proj₁ (proj₂ d) , x , y , b , tt) 
 
-antisym-elim : (n m : NI.μ NI.NatD)(x : μ ≤D (n , m , tt))(y : μ ≤D (m , n , tt)) →
-  {e : n ≡ m } → antisym n m x y ≡ e 
-  → eval CTantisym (antisym-tel n m x y) ≡ e
-antisym-elim .NI.zero' .NI.zero' (lz .NI.zero') (lz .NI.zero') refl = refl
-antisym-elim .NI.zero' m (lz .m) ⟨ fsuc fzero , _ , n , _ , () ⟩ refl
-antisym-elim .(NI.suc' n) .(NI.suc' m) (ls n m x) (ls .m .n y) refl = cong (λ n → cong NI.suc' n) (antisym-elim n m x y refl)
+antisym-elim : (n m : NI.μ NI.NatD)(x : μ ≤D (n , m , tt))(y : μ ≤D (m , n , tt))
+  → eval CTantisym (antisym-tel n m x y) ≡ (antisym n m x y)
+antisym-elim .NI.zero' .NI.zero' (lz .NI.zero') (lz .NI.zero') = refl
+antisym-elim .NI.zero' m (lz .m) ⟨ f1 , _ , n , _ , () ⟩ 
+antisym-elim .(NI.suc' n) .(NI.suc' m) (ls n m x) (ls .m .n y) = cong (λ n → cong NI.suc' n) (antisym-elim n m x y)
 
 
 -- example translation Nat₁-K-like-elim function
@@ -87,13 +92,8 @@ Nat₁-K-like-elim-tel P mzero msuc n₀ n₁ = mzero , msuc , n₀ , n₁ , bel
   (mzero : P NI.zero' zero₁')
   (msuc : (n₀ : NI.μ NI.NatD) (n₁ : μ Nat₁D (n₀ , (n₀ , tt))) → 
           P n₀ n₁ → P (NI.suc' n₀) (suc₁' n₀ n₀ n₁))
-  (n₀ : NI.μ NI.NatD) (n₁ : μ Nat₁D (n₀ , (n₀ , tt))) →
-  {x : P n₀ n₁} → Nat₁-K-like-elim P mzero msuc n₀ n₁ ≡ x 
-  → eval (CTNat₁-K-like-elim P) (Nat₁-K-like-elim-tel P mzero msuc n₀ n₁) ≡ x
-≡-Nat₁-K-like-elim P mzero msuc n zero₁' refl = refl
-≡-Nat₁-K-like-elim P mzero msuc n (suc₁' n₁ _ n₂) refl = cong (λ n → msuc n₁ n₂ n) 
-        (≡-Nat₁-K-like-elim P mzero msuc n₁ n₂ refl)
+  (n₀ : NI.μ NI.NatD) (n₁ : μ Nat₁D (n₀ , (n₀ , tt)))
+  → eval (CTNat₁-K-like-elim P) (Nat₁-K-like-elim-tel P mzero msuc n₀ n₁) ≡ Nat₁-K-like-elim P mzero msuc n₀ n₁
+≡-Nat₁-K-like-elim P mzero msuc n zero₁' = refl
+≡-Nat₁-K-like-elim P mzero msuc n (suc₁' n₁ _ n₂) = cong (λ n → msuc n₁ n₂ n) (≡-Nat₁-K-like-elim P mzero msuc n₁ n₂)
 
-
-
-                    

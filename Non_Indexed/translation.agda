@@ -36,21 +36,19 @@ eval {Δ = Δ} {T} (node {D = D} p bs) args
     -- from a constructor instantiation that is equivalent to the value 
     -- that we split on get the return type
     cs : (x : ⟦ D ⟧ (μ D)) → ret ≡ ⟨ x ⟩ → T args
-    cs (k , xs) e = shrinkExpand p (conToTel xs) q T args (cong (tt ,_) e) r where 
+    cs (k , xs) e = subst T (shrink∘expand p args _ q) r where
 
-      q : ⟨ k , telToCon (conToTel xs) ⟩ ≡ ⟨ k , xs ⟩
-      q = cong (λ x → ⟨ k , x ⟩) (telToCon∘conToTel xs)
+        q : ⟨ k , telToCon (conToTel xs) ⟩ ≡ ret
+        q = trans (cong (λ x → ⟨ k , x ⟩) (telToCon∘conToTel xs)) (sym e)
 
-      -- recursively evaluate the case tree
-      r : expandSort p T (expand p (conToTel xs) q args (cong (tt ,_) e))
-      r = eval (bs k) _
+        r : T (shrink p (expand p (λ ys → ⟨ k , telToCon ys ⟩) args (conToTel xs) q))
+        r = eval (bs k) (expand p _ args (conToTel xs) q)
 
 
 -- example translation not function
-≡-not : {x : μ BoolD} (b : μ BoolD) → not b ≡ x 
-    → eval CTNotRoot ( b , tt ) ≡ x
-≡-not true' refl = refl 
-≡-not false' refl = refl 
+≡-not : (b : μ BoolD) → eval CTNotRoot (b , tt) ≡ not b
+≡-not true'  = refl 
+≡-not false' = refl 
 
 -- call below with the evaluation function to create the telescope of +-arguments
 +-tel : (n m : μ NatD) → ⟦ +Δ ⟧telD
@@ -60,9 +58,9 @@ eval {Δ = Δ} {T} (node {D = D} p bs) args
     +p n' b (n , m , tt) e = eval CT+ (n , m , subst (Below +P) e b , tt)
 
 -- example translation + function
-≡-+ : {x : μ NatD} (n m : μ NatD) → (n +' m) ≡ x → eval CT+ (+-tel n m) ≡ x
-≡-+ zero' m refl = refl  
-≡-+ (suc' n) m refl = cong suc' (≡-+ n m refl)
+≡-+ : (n m : μ NatD) → eval CT+ (+-tel n m) ≡ (n +' m)
+≡-+ zero'    m = refl  
+≡-+ (suc' n) m = cong suc' (≡-+ n m)
 
 
 -- call below with the evaluation function to create the telescope of half-arguments
@@ -73,10 +71,10 @@ half-tel n = n , below (λ n → μ NatD) halfp n , tt where
     halfp n b = eval CTHalfRoot (n , b , tt)
 
 -- example translation half function
-≡-half : {x : μ NatD} (n : μ NatD) → half n ≡ x → eval CTHalfRoot (half-tel n) ≡ x
-≡-half zero' refl = refl  
-≡-half (suc' zero') refl = refl 
-≡-half (suc' (suc' n)) refl = cong (λ n → (suc' n)) (≡-half n refl) 
+≡-half : (n : μ NatD) → eval CTHalfRoot (half-tel n) ≡ half n
+≡-half zero'           = refl  
+≡-half (suc' zero')    = refl 
+≡-half (suc' (suc' n)) = cong suc' (≡-half n) 
 
 -- example translation create function
 create-tel : {X : Set} → (n : μ NatD) → (x : X) → ⟦ createΔ {X} ⟧telD
@@ -85,7 +83,7 @@ create-tel {X} n x = (n , (x , (below ((λ n → Vec X n)) createp n , tt))) whe
         createp : (d : μ NatD) → Below ((λ n → Vec X n)) d → Vec X d
         createp d b = eval CTCreateRoot (d , x , (b , tt))
 
-≡-create : {X : Set} → (n : μ NatD) (x : X) → {v : Vec X n} → create n x ≡ v 
-    → eval CTCreateRoot (create-tel n x) ≡ v
-≡-create {X} zero' x refl = refl  
-≡-create {X} (suc' n) x refl = cong (λ v → (consV n x v)) (≡-create n x refl) 
+≡-create : {X : Set} (n : μ NatD) (x : X)
+    → eval CTCreateRoot (create-tel n x) ≡ create n x
+≡-create {X} zero'    x = refl  
+≡-create {X} (suc' n) x = cong (consV n x) (≡-create n x) 

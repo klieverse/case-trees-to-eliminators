@@ -80,26 +80,26 @@ doDeletionTel p = updateTel₁ p nil (λ _ → deletion) (λ _ → deletion') (�
 
 
 -- the conflict rule
-conflict : {i j : ℕ}{IΔ : Telescope j}{D : DataDesc i IΔ}{d₁ d₂ : ⟦ IΔ ⟧telD} 
+conflict : {i j : ℕ}{IΔ : Telescope j}{D : DataDesc IΔ i}{d₁ d₂ : ⟦ IΔ ⟧telD} 
     → (s : μ D d₁) (t : μ D d₂) → (f : ¬ (conᵢ s ≡ conᵢ t))
     → Σ[ e ∈ d₁ ≡ d₂ ] (subst (μ D) e s ≡ t)
     → Σ[ b ∈ ⊥ ] ⊤
 conflict {D = D} s t f (ed , es) = ⊥-elim (f (cong (λ x → conᵢ (proj₂ x)) (Σ-create ed es))) , tt
 
-conflict' :{i j : ℕ}{IΔ : Telescope j}{D : DataDesc i IΔ}{d₁ d₂ : ⟦ IΔ ⟧telD} 
+conflict' :{i j : ℕ}{IΔ : Telescope j}{D : DataDesc IΔ i}{d₁ d₂ : ⟦ IΔ ⟧telD} 
     → (s : μ D d₁) (t : μ D d₂) → (f : ¬ (conᵢ s ≡ conᵢ t))
     → Σ[ b ∈ ⊥ ] ⊤
     → Σ[ e ∈ d₁ ≡ d₂ ] (subst (μ D) e s ≡ t)
 conflict' {D = D} {d₁} {d₂} s t f (b , tt) = ⊥-elim b
 
-conflict'∘conflict : {i j : ℕ}{IΔ : Telescope j}{D : DataDesc i IΔ}{d₁ d₂ : ⟦ IΔ ⟧telD} 
+conflict'∘conflict : {i j : ℕ}{IΔ : Telescope j}{D : DataDesc IΔ i}{d₁ d₂ : ⟦ IΔ ⟧telD} 
     → (s : μ D d₁) (t : μ D d₂) → (f : ¬ (conᵢ s ≡ conᵢ t))
     → (e : Σ[ e ∈ d₁ ≡ d₂ ] (subst (μ D) e s ≡ t))
     → conflict' s t f (conflict s t f e) ≡ e
 conflict'∘conflict {D = D} s t f (ed , es) = ⊥-elim (f (cong (λ x → conᵢ (proj₂ x)) (Σ-create ed es)))
 
 -- update the telescope by replacing (d₁ ≡ d₂)(x₁ ≡ x₂) by ⊥
-doConflictTel : {Δn IΔn Dn i : ℕ} {Δ : Telescope Δn} {IΔ : Telescope IΔn} {D : DataDesc Dn IΔ}
+doConflictTel : {Δn IΔn Dn i : ℕ} {Δ : Telescope Δn} {IΔ : Telescope IΔn} {D : DataDesc IΔ Dn}
         {X : Set} {d₁ : X → ⟦ IΔ ⟧telD} {d₂ : X → ⟦ IΔ ⟧telD} 
         {x₁ : (x : X) → μ D (d₁ x)} {x₂ : (x : X) → μ D (d₂ x)}
         → (p : Δ [ i ]∶Σ[ X ] (λ x → d₁ x ≡ d₂ x ) ∶ (λ x e → subst (μ D) e (x₁ x) ≡ x₂ x))
@@ -114,13 +114,13 @@ private variable
   i j : ℕ
   IΔ    : Telescope j
 
-injectivityTelC : {IΔ : Telescope j}{D : DataDesc i IΔ}{C : ConDesc IΔ k} {d₁ d₂ : ⟦ IΔ ⟧telD} 
+injectivityTelC : {IΔ : Telescope j}{D : DataDesc IΔ i}{C : ConDesc IΔ k} {d₁ d₂ : ⟦ IΔ ⟧telD} 
   → ⟦ C ⟧c (μ D) d₁ → ⟦ C ⟧c (μ D) d₂ → Telescope k
 injectivityTelC {C = one' x} {d₁} {d₂} x₁ x₂ = nil
 injectivityTelC {D = D} {C = Σ' S C} {d₁} {d₂} (x₁ , xs₁) (x₂ , xs₂) = e ∈ x₁ ≡ x₂ , injectivityTelC (subst (λ x → ⟦ C x ⟧c (μ D) d₁) e xs₁) xs₂
 injectivityTelC {C = ×' x C} {d₁} {d₂} (x₁ , xs₁) (x₂ , xs₂) = e ∈ x₁ ≡ x₂ , injectivityTelC xs₁ xs₂
 
-injectivityTel : {IΔ : Telescope j}{D : DataDesc i IΔ} {d₁ d₂ : ⟦ IΔ ⟧telD}
+injectivityTel : {IΔ : Telescope j}{D : DataDesc IΔ i} {d₁ d₂ : ⟦ IΔ ⟧telD}
         → (x₁ : μ D d₁)  (x₂ : μ D d₂) → (conᵢ x₁ ≡ conᵢ x₂) → Σ ℕ Telescope
 injectivityTel {D = D} {d₁} {d₂} x₁ x₂ ec = case-μ D 
         (λ d₁ x₁ → (x₂ : μ D d₂) → (conᵢ x₁ ≡ conᵢ x₂) → Σ ℕ Telescope) 
@@ -129,20 +129,20 @@ injectivityTel {D = D} {d₁} {d₂} x₁ x₂ ec = case-μ D
         d₁  x₁ x₂ ec
 
 
-injectivityC : {D : DataDesc i IΔ}{C : ConDesc IΔ k} {d : ⟦ IΔ ⟧telD} 
+injectivityC : {D : DataDesc IΔ i}{C : ConDesc IΔ k} {d : ⟦ IΔ ⟧telD} 
          → (x : ⟦ C ⟧c (μ D) d)
          → ⟦ injectivityTelC x x ⟧telD
 injectivityC {C = one' v} {d₁} x = tt
 injectivityC {D = D} {C = Σ' S D'} {d} (x , xs) = refl , injectivityC xs 
 injectivityC {D = D} {C = ×' d' C} {d} (x , xs) = refl , injectivityC xs
 
-injectivity : {i j : ℕ}{IΔ : Telescope j}{D : DataDesc i IΔ}{d₁ d₂ : ⟦ IΔ ⟧telD} 
+injectivity : {i j : ℕ}{IΔ : Telescope j}{D : DataDesc IΔ i}{d₁ d₂ : ⟦ IΔ ⟧telD} 
     → (s : μ D d₁) (t : μ D d₂)
     → (e : (d₁ , s) ≡ (d₂ , t)) → ⟦ proj₂ (injectivityTel s t (cong (λ dx → conᵢ (proj₂ dx)) e)) ⟧telD
 injectivity {D = D} {d₁} {d₂} s t e = J (λ x e → ⟦ proj₂ (injectivityTel s (proj₂ x) (cong (λ dx → conᵢ (proj₂ dx)) e)) ⟧telD) 
         (case-μ D (λ d₁ s → ⟦ proj₂ (injectivityTel s s refl) ⟧telD) (λ d₁ s → injectivityC (proj₂ s)) d₁ s) e 
 
-injectivityK : {i j : ℕ}{IΔ : Telescope j}{D : DataDesc i IΔ}{d₁ d₂ : ⟦ IΔ ⟧telD} 
+injectivityK : {i j : ℕ}{IΔ : Telescope j}{D : DataDesc IΔ i}{d₁ d₂ : ⟦ IΔ ⟧telD} 
     → (s : μ D d₁) (t : μ D d₂) (f : conᵢ s ≡ conᵢ t)
     → (e : (d₁ , s) ≡ (d₂ , t)) → ⟦ proj₂ (injectivityTel s t f) ⟧telD
 injectivityK {D = D} {d₁} {d₂} s t f e = J (λ x e → (f : conᵢ s ≡ conᵢ (proj₂ x)) → ⟦ proj₂ (injectivityTel s (proj₂ x) f) ⟧telD) 
@@ -150,7 +150,7 @@ injectivityK {D = D} {d₁} {d₂} s t f e = J (λ x e → (f : conᵢ s ≡ con
             (case-μ D (λ d₁ s → ⟦ proj₂ (injectivityTel s s refl) ⟧telD) (λ d₁ s → injectivityC (proj₂ s)) 
         d₁ s) f) e f
 
-injectivityC' : {D : DataDesc i IΔ}{C : ConDesc IΔ k}{d₁ d₂ : ⟦ IΔ ⟧telD}
+injectivityC' : {D : DataDesc IΔ i}{C : ConDesc IΔ k}{d₁ d₂ : ⟦ IΔ ⟧telD}
     → (x₁ : ⟦ C ⟧c (μ D) d₁) → (x₂ : ⟦ C ⟧c (μ D) d₂) → ⟦ injectivityTelC x₁ x₂ ⟧telD
     → (d₁ , x₁) ≡ (d₂ , x₂)
 injectivityC' {IΔ = IΔ} {C = one' v} {d₁} {d₂} x₁ x₂ tt 
@@ -162,7 +162,7 @@ injectivityC' {D = D} {C = ×' d C} {d₁} {d₂} (x₁ , xs₁) (x₂ , xs₂) 
     = ΣΠ-create (linvΣ₁ (injectivityC' xs₁ xs₂ es)) e (linvΣ₂ (injectivityC' xs₁ xs₂ es)) 
 
 
-injectivity' : {i j : ℕ}{IΔ : Telescope j}{D : DataDesc i IΔ}{d₁ d₂ : ⟦ IΔ ⟧telD} 
+injectivity' : {i j : ℕ}{IΔ : Telescope j}{D : DataDesc IΔ i}{d₁ d₂ : ⟦ IΔ ⟧telD} 
     → (s : μ D d₁) (t : μ D d₂) → (ec : conᵢ s ≡ conᵢ t)
     → ⟦ proj₂ (injectivityTel s t ec) ⟧telD
     → (d₁ , s) ≡ (d₂ , t)
@@ -175,7 +175,7 @@ injectivity' {D = D} {d₁} {d₂} s t ec xs = case-μ D (λ d₁ s → (t : μ 
                 (injectivityC' (proj₂ s) t xs)) ec (proj₂ t) xs) 
     d₂ t ec xs) d₁ s t ec xs
 
-injectivity'K : {i j : ℕ}{IΔ : Telescope j}{D : DataDesc i IΔ}{d₁ d₂ : ⟦ IΔ ⟧telD} 
+injectivity'K : {i j : ℕ}{IΔ : Telescope j}{D : DataDesc IΔ i}{d₁ d₂ : ⟦ IΔ ⟧telD} 
     → (s : μ D d₁) (t : μ D d₂) → (ec : conᵢ s ≡ conᵢ t)
     → ⟦ proj₂ (injectivityTel s t ec) ⟧telD
     → (d₁ , s) ≡ (d₂ , t)
@@ -190,7 +190,7 @@ injectivity'K {D = D} {d₁} {d₂} s t ec xs = case-μ D (λ d₁ s → (t : μ
 
 
 
-injectivityC'∘injectivityC : {D : DataDesc i IΔ}{C : ConDesc IΔ k}{d : ⟦ IΔ ⟧telD}
+injectivityC'∘injectivityC : {D : DataDesc IΔ i}{C : ConDesc IΔ k}{d : ⟦ IΔ ⟧telD}
     → (x : ⟦ C ⟧c (μ D) d) 
     → injectivityC' x x (injectivityC x) ≡ refl
 injectivityC'∘injectivityC {C = one' v} {d} x = J (λ d x → J₁ (λ v₁ e → (x₂ : v₁ ≡ d) → (d , e) ≡ (d , x₂)) (J (λ d₂ e → (d , refl {x = d}) ≡ (d₂ , e)) refl) x x ≡ refl) refl x --  refl
@@ -200,7 +200,7 @@ injectivityC'∘injectivityC {D = D}{C = ×' d' C'} {d} (u , x) =  subst (λ e �
       (linvΣ₂ e) ≡ refl) (sym (injectivityC'∘injectivityC x)) refl
 
 
-injectivity'∘injectivity : {i j : ℕ}{IΔ : Telescope j}{D : DataDesc i IΔ}{d₁ d₂ : ⟦ IΔ ⟧telD} 
+injectivity'∘injectivity : {i j : ℕ}{IΔ : Telescope j}{D : DataDesc IΔ i}{d₁ d₂ : ⟦ IΔ ⟧telD} 
     → (s : μ D d₁) (t : μ D d₂)
     → (e : (d₁ , s) ≡ (d₂ , t)) → injectivity' s t (cong (λ dx → conᵢ (proj₂ dx)) e) (injectivity s t e) ≡ e
 injectivity'∘injectivity {D = D} {d₁} {d₂} s t e = J (λ x e → injectivity' s (proj₂ x) (cong (λ dx → conᵢ (proj₂ dx)) e) (injectivity s (proj₂ x) e) ≡ e) 
@@ -208,7 +208,7 @@ injectivity'∘injectivity {D = D} {d₁} {d₂} s t e = J (λ x e → injectivi
        (λ d₁ s → cong (cong (λ { (d , x) → d , ⟨ proj₁ s , x ⟩ })) (injectivityC'∘injectivityC (proj₂ s))) 
     d₁ s) e
 
-injectivity'∘injectivityK : {i j : ℕ}{IΔ : Telescope j}{D : DataDesc i IΔ}{d₁ d₂ : ⟦ IΔ ⟧telD} 
+injectivity'∘injectivityK : {i j : ℕ}{IΔ : Telescope j}{D : DataDesc IΔ i}{d₁ d₂ : ⟦ IΔ ⟧telD} 
     → (s : μ D d₁) (t : μ D d₂ )(f : conᵢ s ≡ conᵢ t)
     → (e : (d₁ , s) ≡ (d₂ , t)) → injectivity'K s t f (injectivityK s t f e) ≡ e
 injectivity'∘injectivityK {D = D} {d₁} {d₂} s t f e = J (λ x e → (f : conᵢ s ≡ conᵢ (proj₂ x)) → injectivity'K s (proj₂ x) f (injectivityK s (proj₂ x) f e) ≡ e) 
@@ -218,12 +218,12 @@ injectivity'∘injectivityK {D = D} {d₁} {d₂} s t f e = J (λ x e → (f : c
             d₁ s) 
     f) e f 
 
-doInjectivityTelLength : {j : ℕ}{IΔ : Telescope j}{D : DataDesc i IΔ}{d₁ d₂ : ⟦ IΔ ⟧telD}
+doInjectivityTelLength : {j : ℕ}{IΔ : Telescope j}{D : DataDesc IΔ i}{d₁ d₂ : ⟦ IΔ ⟧telD}
     → (s : μ D d₁) (t : μ D d₂) →  (e' : conᵢ s ≡ conᵢ t)
     → proj₁ (injectivityTel s t e') ≡ conₙ s
 doInjectivityTelLength {D = D} ⟨ s ⟩ ⟨ t ⟩ e' = refl
 
-doinjectivityTel : {Δn IΔn Dn i : ℕ} {Δ : Telescope Δn} {IΔ : Telescope IΔn} {D : DataDesc Dn IΔ}
+doinjectivityTel : {Δn IΔn Dn i : ℕ} {Δ : Telescope Δn} {IΔ : Telescope IΔn} {D : DataDesc IΔ Dn}
     {X : Set} {d₁ : X → ⟦ IΔ ⟧telD} {d₂ : X → ⟦ IΔ ⟧telD} 
     {x₁ : (x : X) → μ D (d₁ x)} {x₂ : (x : X) → μ D (d₂ x)}
     {n : ℕ}(eℕ : (x : X) → conₙ (x₁ x) ≡ n)
@@ -237,7 +237,7 @@ doinjectivityTel {Δn = suc (suc Δn)} {Δ = cons S E } {d₁ = d₁} {d₂} {x�
             (λ xs → (injectivity'K (x₁ x) (x₂ x) (e' x) xs))) 
 doinjectivityTel {Δ = cons S E} eℕ (there p) e' = cons S (λ s → doinjectivityTel eℕ (p s) e') 
 
-doInjectivity : {Δn IΔn Dn i : ℕ} {Δ : Telescope Δn} {IΔ : Telescope IΔn} {D : DataDesc Dn IΔ}
+doInjectivity : {Δn IΔn Dn i : ℕ} {Δ : Telescope Δn} {IΔ : Telescope IΔn} {D : DataDesc IΔ Dn}
     {X : Set} {d₁ : X → ⟦ IΔ ⟧telD} {d₂ : X → ⟦ IΔ ⟧telD} 
     {x₁ : (x : X) → μ D (d₁ x)} {x₂ : (x : X) → μ D (d₂ x)}
     {n : ℕ}(eℕ : (x : X) → conₙ (x₁ x) ≡ n)
@@ -257,7 +257,7 @@ doInjectivity {Δn = suc (suc Δn)} {Δ = cons S E} {D = D} {d₁ = d₁} {d₂}
 doInjectivity {Δ = cons S E} {s} {t} eℕ (there p) e' (x , xs) = x , doInjectivity eℕ (p x) e' xs
 
 
-doInjectivity' : {Δn IΔn Dn i : ℕ} {Δ : Telescope Δn} {IΔ : Telescope IΔn} {D : DataDesc Dn IΔ}
+doInjectivity' : {Δn IΔn Dn i : ℕ} {Δ : Telescope Δn} {IΔ : Telescope IΔn} {D : DataDesc IΔ Dn}
     {X : Set} {d₁ : X → ⟦ IΔ ⟧telD} {d₂ : X → ⟦ IΔ ⟧telD} 
     {x₁ : (x : X) → μ D (d₁ x)} {x₂ : (x : X) → μ D (d₂ x)}
     {n : ℕ}(eℕ : (x : X) → conₙ (x₁ x) ≡ n)
@@ -282,7 +282,7 @@ doInjectivity' {Δ = cons S E} {s} {t} eℕ (there p) e' (x , xs) = x , doInject
 
 
 
-doInjectivity'∘doInjectivity :  {Δn IΔn Dn i : ℕ} {Δ : Telescope Δn} {IΔ : Telescope IΔn} {D : DataDesc Dn IΔ}
+doInjectivity'∘doInjectivity :  {Δn IΔn Dn i : ℕ} {Δ : Telescope Δn} {IΔ : Telescope IΔn} {D : DataDesc IΔ Dn}
         {X : Set} {d₁ : X → ⟦ IΔ ⟧telD} {d₂ : X → ⟦ IΔ ⟧telD} 
         {x₁ : (x : X) → μ D (d₁ x)} {x₂ : (x : X) → μ D (d₂ x)}
         {n : ℕ}(eℕ : (x : X) → conₙ (x₁ x) ≡ n)
@@ -342,23 +342,23 @@ doInjectivity'∘doInjectivity {Δ = cons S E} eℕ (there p) e' (x , xs) = subs
 
 
 -- injectivity rule for datatypes with no indices
-injectivityTelC₁ : {D : DataDesc i nil}{C : ConDesc nil j} (x₁ x₂ : ⟦ C ⟧c (μ D) tt) → Telescope j
+injectivityTelC₁ : {D : DataDesc nil i}{C : ConDesc nil j} (x₁ x₂ : ⟦ C ⟧c (μ D) tt) → Telescope j
 injectivityTelC₁ {C = one' tt} _ _ = nil
 injectivityTelC₁ {D = D} {C = Σ' S C} (x₁ , xs₁) (x₂ , xs₂) = e ∈ x₁ ≡ x₂ , injectivityTelC₁ (subst (λ x → ⟦ C x ⟧c (μ D) tt) e xs₁) xs₂
 injectivityTelC₁ {C = ×' tt C} (x₁ , xs₁) (x₂ , xs₂) = e ∈ x₁ ≡ x₂ , injectivityTelC₁ xs₁ xs₂
 
-injectivityTel₁ : {D : DataDesc i nil} (x₁ x₂ : μ D tt) → conᵢ x₁ ≡ conᵢ x₂ → Σ ℕ Telescope
+injectivityTel₁ : {D : DataDesc nil i} (x₁ x₂ : μ D tt) → conᵢ x₁ ≡ conᵢ x₂ → Σ ℕ Telescope
 injectivityTel₁ {D = D} x₁ x₂ e = case-μ D (λ _ x₁ → (x₂ : μ D tt) → conᵢ x₁ ≡ conᵢ x₂ → Σ ℕ Telescope) 
         (λ _ x₁ → case-μ D (λ _ x₂ → proj₁ x₁ ≡ conᵢ x₂ → Σ ℕ Telescope) 
             (λ _ x₂ e → proj₁ (D (proj₁ x₁)) , injectivityTelC₁ (proj₂ x₁) (subst (λ x → ⟦ proj₂ (D x) ⟧c (μ D) tt) (sym e) (proj₂ x₂))) tt) 
             tt x₁ x₂ e
 
-injectivityC₁ : {D : DataDesc i nil}{C : ConDesc nil j} → (c : ⟦ C ⟧c (μ D) tt) → ⟦ injectivityTelC₁ c c ⟧telD
+injectivityC₁ : {D : DataDesc nil i}{C : ConDesc nil j} → (c : ⟦ C ⟧c (μ D) tt) → ⟦ injectivityTelC₁ c c ⟧telD
 injectivityC₁ {C = one' tt} c = tt
 injectivityC₁ {C = Σ' S D} (c , cs) = refl , injectivityC₁ cs
 injectivityC₁ {C = ×' tt C} (c , cs) = refl , injectivityC₁ cs
 
-injectivity₁ : {D : DataDesc i nil} (x₁ x₂ : μ D tt) (f : conᵢ x₁ ≡ conᵢ x₂) (e : x₁ ≡ x₂) 
+injectivity₁ : {D : DataDesc nil i} (x₁ x₂ : μ D tt) (f : conᵢ x₁ ≡ conᵢ x₂) (e : x₁ ≡ x₂) 
     → ⟦ proj₂ (injectivityTel₁ x₁ x₂ f) ⟧telD
 injectivity₁ {D = D} x₁ x₂ f e = J (λ x₂ e → (f : conᵢ x₁ ≡ conᵢ x₂) → ⟦ proj₂ (injectivityTel₁ x₁ x₂ f) ⟧telD) 
     (λ f → K (λ f → ⟦ proj₂ (injectivityTel₁ x₁ x₁ f) ⟧telD) 
@@ -366,7 +366,7 @@ injectivity₁ {D = D} x₁ x₂ f e = J (λ x₂ e → (f : conᵢ x₁ ≡ con
     x₁) f) e f
 
 -- -- left inverse injectivity
-injectivityC₁' : {D : DataDesc i nil}{C : ConDesc nil j}
+injectivityC₁' : {D : DataDesc nil i}{C : ConDesc nil j}
     → (x₁ x₂ : ⟦ C ⟧c (μ D) tt) → ⟦ injectivityTelC₁ x₁ x₂ ⟧telD → x₁ ≡ x₂
 injectivityC₁' {C = one' tt} refl refl e = refl 
 injectivityC₁' {D = D} {C = Σ' S D'} (x₁ , xs₁) (x₂ , xs₂) (e , es) 
@@ -377,7 +377,7 @@ injectivityC₁' {D = D} {C = ×' tt C} (x₁ , xs₁) (x₂ , xs₂) (e , es)
     = subst (λ xs₂ → (x₁ , xs₁) ≡ (x₂ , xs₂)) (injectivityC₁' xs₁ xs₂ es) 
         (subst (λ x₂ → (x₁ , xs₁) ≡ (x₂ , xs₁)) e refl)
 
-injectivity₁' : {D : DataDesc i nil} (x₁ x₂ : μ D tt)
+injectivity₁' : {D : DataDesc nil i} (x₁ x₂ : μ D tt)
     → (f : conᵢ x₁ ≡ conᵢ x₂) → ⟦ proj₂ (injectivityTel₁ x₁ x₂ f) ⟧telD → x₁ ≡ x₂
 injectivity₁' {D = D} 
     = case-μ D (λ _ x₁ → (x₂ : μ D tt) → (f : conᵢ x₁ ≡ conᵢ x₂) → ⟦ proj₂ (injectivityTel₁ x₁ x₂ f) ⟧telD → x₁ ≡ x₂) 
@@ -386,28 +386,28 @@ injectivity₁' {D = D}
                 (λ x₂ xs → cong (λ x → ⟨ proj₁ x₁ , x ⟩) (injectivityC₁' (proj₂ x₁) x₂ xs)) f (proj₂ x₂)) tt) tt
 
 -- proof of left inverse injectivity
-injectivityC₁'∘injectivityC₁ : {D : DataDesc i nil}{C : ConDesc nil j} (x : ⟦ C ⟧c (μ D) tt)
+injectivityC₁'∘injectivityC₁ : {D : DataDesc nil i}{C : ConDesc nil j} (x : ⟦ C ⟧c (μ D) tt)
     → injectivityC₁' x x (injectivityC₁ x) ≡ refl
 injectivityC₁'∘injectivityC₁ {C = one' tt} refl = refl
 injectivityC₁'∘injectivityC₁ {D = D} {C = Σ' S E} (s , x) = subst (λ e → subst (λ x₁ → (s , x) ≡ (s , x₁)) e refl ≡ refl) (sym (injectivityC₁'∘injectivityC₁ x)) refl
 injectivityC₁'∘injectivityC₁ {D = D}{C = ×' tt C'} (u , x) = subst (λ e → subst (λ xs → (u , x) ≡ (u , xs)) e refl
       ≡ refl) (sym (injectivityC₁'∘injectivityC₁ x)) refl 
 
-injectivity₁'∘injectivity₁ : {D : DataDesc i nil} → (x₁ x₂ : μ D tt) → (f : conᵢ x₁ ≡ conᵢ x₂)
+injectivity₁'∘injectivity₁ : {D : DataDesc nil i} → (x₁ x₂ : μ D tt) → (f : conᵢ x₁ ≡ conᵢ x₂)
     → (e : x₁ ≡ x₂) → injectivity₁' x₁ x₂ f (injectivity₁ x₁ x₂ f e) ≡ e
 injectivity₁'∘injectivity₁ {D = D} x₁ x₂ f e = J (λ x₂ e → (f : conᵢ x₁ ≡ conᵢ x₂) → injectivity₁' x₁ x₂ f (injectivity₁ x₁ x₂ f e) ≡ e) 
     (λ f → K (λ f → injectivity₁' x₁ x₁ f (injectivity₁ x₁ x₁ f refl) ≡ refl) 
         (case-μ D (λ _ x₁ → injectivity₁' x₁ x₁ refl (injectivity₁ x₁ x₁ refl refl) ≡ refl) 
             (λ _ x₁ → cong (cong (λ x → ⟨ proj₁ x₁ , x ⟩)) (injectivityC₁'∘injectivityC₁ (proj₂ x₁))) tt x₁) f) e f
 
-doInjectivityTelLength₁ : {D : DataDesc i nil} → (s t : μ D tt) 
+doInjectivityTelLength₁ : {D : DataDesc nil i} → (s t : μ D tt) 
     → (f : conᵢ s ≡ conᵢ t)
     → proj₁ (injectivityTel₁ s t f) ≡ conₙ s 
 doInjectivityTelLength₁ {D = D} = case-μ D (λ _ s → (t : μ D tt) → (f : (conᵢ s ≡ conᵢ t)) → proj₁ (injectivityTel₁ s t f) ≡ conₙ s) 
             (λ _ s → case-μ D (λ _ t → (f : (conᵢ ⟨ s ⟩ ≡ conᵢ t)) → proj₁ (injectivityTel₁ ⟨ s ⟩ t f) ≡ conₙ ⟨ s ⟩) 
             (λ _ t f → refl) tt) tt  
 
-doinjectivityTel₁ : {D' : Set}{n i j k : ℕ}{D : DataDesc i nil} {Δ : Telescope n}
+doinjectivityTel₁ : {D' : Set}{n i j k : ℕ}{D : DataDesc nil i} {Δ : Telescope n}
   → {s t : D' → μ D tt}(e' : (d : D') → conᵢ (s d) ≡ conᵢ (t d)) (eℕ : (d : D') → conₙ (s d) ≡ j)
   → (p : Δ [ k ]∶Σ[ D' ] (λ d' → (s d') ≡ (t d')))
   → Telescope (k + j + (n ∸ suc k))
@@ -415,7 +415,7 @@ doinjectivityTel₁ {n = suc i} {Δ = cons S E} {s} {t} e' eℕ (here d) = subst
     (mergeTel (proj₂ (injectivityTel₁ (s d) (t d) (e' d))) E (injectivity₁' (s d) (t d) (e' d))) 
 doinjectivityTel₁ {Δ = cons S E} {s} {t} e' eℕ (there x) = cons S (λ s → doinjectivityTel₁ e' eℕ (x s))
 
-doInjectivity₁ : {D' : Set}{n i j k : ℕ}{D : DataDesc i nil}{Δ : Telescope n}
+doInjectivity₁ : {D' : Set}{n i j k : ℕ}{D : DataDesc nil i}{Δ : Telescope n}
   → {s t : D' → μ D tt}(e' : (d : D') → conᵢ (s d) ≡ conᵢ (t d)) (eℕ : (d : D') → conₙ (s d) ≡ j)
   → (p : Δ [ k ]∶Σ[ D' ] (λ d' → (s d') ≡ (t d'))) (xs : ⟦ Δ ⟧telD)
   → ⟦ doinjectivityTel₁ e' eℕ p ⟧telD
@@ -425,7 +425,7 @@ doInjectivity₁ {n = suc i} {Δ = cons S E} {s} {t} e' eℕ (here d) (e , xs) =
     (trans (doInjectivityTelLength₁ (s d) (t d) (e' d)) (eℕ d))
 doInjectivity₁ {Δ = cons S E} {s} {t} e' eℕ (there p) (x , xs) = x , doInjectivity₁ e' eℕ (p x) xs 
 
-doInjectivity₁' : {D' : Set}{n i j k : ℕ}{D : DataDesc i nil}{Δ : Telescope n}
+doInjectivity₁' : {D' : Set}{n i j k : ℕ}{D : DataDesc nil i}{Δ : Telescope n}
   → {s t : D' → μ D tt}(e' : (d : D') → conᵢ (s d) ≡ conᵢ (t d)) (eℕ : (d : D') → conₙ (s d) ≡ j)
   → (p : Δ [ k ]∶Σ[ D' ] (λ d' → (s d') ≡ (t d'))) (xs : ⟦ doinjectivityTel₁ e' eℕ p ⟧telD)
   → ⟦ Δ ⟧telD
@@ -438,7 +438,7 @@ doInjectivity₁' {n = suc i} {Δ = cons S E} {s} {t} e' eℕ (here d) xs = (inj
     
 doInjectivity₁' {Δ = cons S E} {s} {t} e' eℕ (there p) (x , xs) = x , doInjectivity₁' e' eℕ (p x) xs 
 
-doInjectivity₁'∘doInjectivity₁ : {D' : Set}{n i j k : ℕ}{D : DataDesc i nil}{Δ : Telescope n}
+doInjectivity₁'∘doInjectivity₁ : {D' : Set}{n i j k : ℕ}{D : DataDesc nil i}{Δ : Telescope n}
   → {s t : D' → μ D tt}(e' : (d : D') → conᵢ (s d) ≡ conᵢ (t d)) (eℕ : (d : D') → conₙ (s d) ≡ j)
   → (p : Δ [ k ]∶Σ[ D' ] (λ d' → (s d') ≡ (t d'))) (xs : ⟦ Δ ⟧telD)
   → doInjectivity₁' e' eℕ p (doInjectivity₁ e' eℕ p xs) ≡ xs

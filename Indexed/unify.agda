@@ -44,7 +44,7 @@ data Unification : (Δ : Telescope n) → Set₁ where
         → Unification Δ
     
     -- (d₁ ≡ d₂)(c x₁ ≡ c x₂) ≃ (x₁ ≡ x₂)
-    UInjectivity : {Δ : Telescope n} {IΔ : Telescope i} {D : DataDesc m IΔ}
+    UInjectivity : {Δ : Telescope n} {IΔ : Telescope i} {D : DataDesc IΔ m}
         → {X : Set} {d₁ : X → ⟦ IΔ ⟧telD} {d₂ : X → ⟦ IΔ ⟧telD} 
         → {x₁ : (x : X) → μ D (d₁ x)} {x₂ : (x : X) → μ D (d₂ x)} 
         → (p : Δ [ k ]∶Σ[ X ] (λ x → d₁ x ≡ d₂ x ) ∶ (λ x e → subst (μ D) e (x₁ x) ≡ x₂ x))
@@ -54,7 +54,7 @@ data Unification : (Δ : Telescope n) → Set₁ where
         → Unification Δ
 
     -- (c x₁ ≡ c x₂) ≃ (x₁ ≡ x₂)
-    UInjectivity₁ : {Δ : Telescope n} {D : DataDesc m nil} {X : Set}
+    UInjectivity₁ : {Δ : Telescope n} {D : DataDesc nil m} {X : Set}
         → {x₁ : (x : X) → μ D tt} {x₂ : (x : X) → μ D tt} 
         → (p : Δ [ k ]∶Σ[ X ] (λ x → x₁ x ≡ x₂ x))
         → {j : ℕ}(eℕ : (x : X) → conₙ (x₁ x) ≡ j)
@@ -63,7 +63,7 @@ data Unification : (Δ : Telescope n) → Set₁ where
         → Unification Δ
 
     -- (d₁ ≡ d₂)(c₁ s ≡ c₂ t) ≃ ⊥
-    UConflict : {Δ : Telescope n} {IΔ : Telescope i} {D : DataDesc m IΔ}
+    UConflict : {Δ : Telescope n} {IΔ : Telescope i} {D : DataDesc IΔ m}
         → {X : Set} {d₁ : X → ⟦ IΔ ⟧telD} {d₂ : X → ⟦ IΔ ⟧telD} 
         → {x₁ : (x : X) → μ D (d₁ x)} {x₂ : (x : X) → μ D (d₂ x)} 
         → (p : Δ [ k ]∶Σ[ X ] (λ x → d₁ x ≡ d₂ x ) ∶ (λ x e → subst (μ D) e (x₁ x) ≡ x₂ x))
@@ -247,16 +247,16 @@ unifyConflict X = UConflict
                             e₁ (x , xs , refl {x = (suc' n) , tt})) ≡ y , 
                 e₃ ∈ proj₁ (subst (λ x → ⟦ ×' (proj₁
                                 (subst  (λ x₁ → ⟦ snd (VecD X x₁) ⟧c (μ (VecD X))
-                                    (suc₁ m , tt )) (sym (refl {x = fsuc fzero})) (m , y , ys , refl {x = (suc' m) , tt})) , tt)
+                                    (suc₁ m , tt )) (sym (refl {x = f1})) (m , y , ys , refl {x = (suc' m) , tt})) , tt)
                                 (one' (suc' (proj₁ (subst (λ x₁ →
                                     ⟦ snd (VecD X x₁) ⟧c (μ (VecD X)) (suc₁ m , tt ))
-                                        (sym (refl {x = fsuc fzero})) (m , y , ys , refl {x = (suc' m) , tt}))) , tt)) ⟧c
+                                        (sym (refl {x = f1})) (m , y , ys , refl {x = (suc' m) , tt}))) , tt)) ⟧c
                                 (μ (VecD X)) (suc₁ n , tt ))
                                 e₂ (snd (subst (λ x → ⟦ Σ' X (λ x₁ → ×' (x , tt) 
                                     (one' (suc' x , tt))) ⟧c (μ (VecD X)) (suc₁ n , tt))
                             e₁ (x , xs , refl {x = (suc' n) , tt})))) 
                         ≡ proj₁ (snd (snd (subst (λ x → ⟦ snd (VecD X x) ⟧c (μ (VecD X)) (suc₁ m , tt))
-                                (sym (refl {x = fsuc fzero})) (m , y , ys , refl {x = (suc' m) , tt})))) , nil
+                                (sym (refl {x = f1})) (m , y , ys , refl {x = (suc' m) , tt})))) , nil
 
 Δinjectivity₂ : (X : Set) → Telescope 9 
 Δinjectivity₂ X = n ∈ μ NatD tt , m ∈ μ NatD tt , x ∈ X , y ∈ X , xs ∈ μ (VecD X) (n , tt) , ys ∈ μ (VecD X) (m , tt) ,
