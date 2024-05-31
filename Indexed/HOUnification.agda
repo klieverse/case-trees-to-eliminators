@@ -195,6 +195,40 @@ HOUnification'∘HOUnification {Δ = Δ} {X} {Y} a b f' f u v r s (e , xs) = goa
 
 
 
+pConv : {n : μ NatD tt}(e₁ : (n , tt) ≡ (n , tt))
+  → cong (λ n → (_,_ {B = λ x₁ → ⊤} (suc₁ n) tt)) (cong proj₁ e₁) ≡ cong (λ _ → (_,_ {B = λ x₁ → ⊤} (suc₁ n) tt)) (cong proj₁ e₁)
+  → cong (λ ntt → (_,_ {B = λ x₁ → ⊤} (suc₁ (proj₁ ntt)) tt)) e₁ ≡ cong (λ _ → (_,_ {B = λ x₁ → ⊤} (suc₁ n) tt)) e₁
+pConv {n} e₁ e = cong∘cong→cong {a = λ n → (_,_ {B = λ x₁ → ⊤} (suc₁ n) tt)} {b = λ _ → (_,_ {B = λ x₁ → ⊤} (suc₁ n) tt)} {f' = proj₁} e₁ refl refl e
+
+pConv' : {n : μ NatD tt}(e₁ : (n , tt) ≡ (n , tt))
+  → cong (λ ntt → (_,_ {B = λ x₁ → ⊤} (suc₁ (proj₁ ntt)) tt)) e₁ ≡ cong (λ _ → (_,_ {B = λ x₁ → ⊤} (suc₁ n) tt)) e₁
+  → cong (λ n → (_,_ {B = λ x₁ → ⊤} (suc₁ n) tt)) (cong proj₁ e₁) ≡ cong (λ _ → (_,_ {B = λ x₁ → ⊤} (suc₁ n) tt)) (cong proj₁ e₁)
+pConv' {n} e₁ e = cong→cong∘cong {a = λ n → (_,_ {B = λ x₁ → ⊤} (suc₁ n) tt)} {b = λ _ → (_,_ {B = λ x₁ → ⊤} (suc₁ n) tt)} {f' = proj₁} e₁ refl refl e
+
+pConv'∘pConv : {n : μ NatD tt}(e₁ : (n , tt) ≡ (n , tt))
+  → (e : cong (λ n → (_,_ {B = λ x₁ → ⊤} (suc₁ n) tt)) (cong proj₁ e₁) ≡ cong (λ _ → (_,_ {B = λ x₁ → ⊤} (suc₁ n) tt)) (cong proj₁ e₁))
+  → pConv' e₁ (pConv e₁ e) ≡ e
+pConv'∘pConv {n} e₁ e = cong→cong∘cong∘cong∘cong→cong {a = λ n → (_,_ {B = λ x₁ → ⊤} (suc₁ n) tt)} {b = λ _ → (_,_ {B = λ x₁ → ⊤} (suc₁ n) tt)} {f' = proj₁} e₁ refl refl e
+
+
+
+
+e₃Conv : {X : Set}{n m : μ NatD tt}{xs : μ (VecD X) (n , tt)}{ys : μ (VecD X) (m , tt)}(e₁ : (n , tt) ≡ (m , tt))
+  → subst (λ n → μ (VecD X) (n , tt)) (cong proj₁ e₁) xs ≡ ys → subst (μ (VecD X)) e₁ xs ≡ ys
+e₃Conv {X} {n} {m} {xs} {ys} e₁ e = J (λ mt e₁ → (ys : μ (VecD X) mt) → subst (λ n → μ (VecD X) (n , tt)) (cong proj₁ e₁) xs ≡ ys → subst (μ (VecD X)) e₁ xs ≡ ys) 
+  (λ _ e → e) e₁ ys e
+
+e₃Conv' : {X : Set}{n m : μ NatD tt}{xs : μ (VecD X) (n , tt)}{ys : μ (VecD X) (m , tt)}(e₁ : (n , tt) ≡ (m , tt))
+  → subst (μ (VecD X)) e₁ xs ≡ ys → subst (λ n → μ (VecD X) (n , tt)) (cong proj₁ e₁) xs ≡ ys
+e₃Conv' {X} {n} {m} {xs} {ys} e₁ e = J (λ mt e₁ → (ys : μ (VecD X) mt) → subst (μ (VecD X)) e₁ xs ≡ ys → subst (λ n → μ (VecD X) (n , tt)) (cong proj₁ e₁) xs ≡ ys) 
+  (λ _ e → e) e₁ ys e
+
+e₃Conv'∘e₃Conv : {X : Set}{n m : μ NatD tt}{xs : μ (VecD X) (n , tt)}{ys : μ (VecD X) (m , tt)}(e₁ : (n , tt) ≡ (m , tt))
+  → (e : subst (λ n → μ (VecD X) (n , tt)) (cong proj₁ e₁) xs ≡ ys)
+  → e₃Conv' e₁ (e₃Conv e₁ e) ≡ e
+e₃Conv'∘e₃Conv {X} {n} {m} {xs} {ys} e₁ e = J (λ mt e₁ → (ys : μ (VecD X) mt) → (e : subst (λ n → μ (VecD X) (n , tt)) (cong proj₁ e₁) xs ≡ ys)
+  → e₃Conv' e₁ (e₃Conv e₁ e) ≡ e) (λ _ _ → refl) e₁ ys e
+
 
 
 ΔHOUnification : (X : Set) → Telescope 6 
@@ -254,7 +288,7 @@ HOUnify₅ₗ X n = USplitΣ (λ w → _,_ {B = λ x₁ → ⊤} (suc₁ w) tt) 
     (UInjectivity₁ {x₁ = λ where (n , w) → suc₁ w } {x₂ = λ where (n , w) → suc₁ n } 
         (there λ w → here (n , w)) (λ _ → refl) (λ _ → refl) 
         (Usolution₁ {X = ⊤} (here (tt , n)) 
-            (UAddRule₁ (here tt) nil (λ _ → injectivity⊤) (λ _ → injectivity⊤') (λ _ → injectivity⊤'∘injectivity⊤) 
+            (UAddRule₁ (here tt) (λ _ → nil) (λ _ → injectivity⊤) (λ _ → injectivity⊤') (λ _ → injectivity⊤'∘injectivity⊤) 
                 (UEnd nil)))) 
 
 ΔHOUnification₅ : (X : Set) → Telescope 9
@@ -263,14 +297,6 @@ HOUnify₅ₗ X n = USplitΣ (λ w → _,_ {B = λ x₁ → ⊤} (suc₁ w) tt) 
             p  ∈ cong (λ ntt → (_,_ {B = λ x₁ → ⊤} (suc₁ (proj₁ ntt)) tt)) e₁ ≡ cong (λ _ → (_,_ {B = λ x₁ → ⊤} (suc₁ n) tt)) e₁ ,
             e₂ ∈ x ≡ y , 
             e₃ ∈ subst (μ (VecD X)) e₁ xs ≡ ys , nil
-
-ΔHOUnification₄' : (X : Set) → Telescope 9
-ΔHOUnification₄' X = n ∈ μ NatD tt , x ∈ X , y ∈ X , xs ∈ μ (VecD X) (n , tt) , ys ∈ μ (VecD X) (n , tt) ,
-            e₁ ∈ (n , tt) ≡ (n , tt) , 
-            p  ∈ cong (λ n → (_,_ {B = λ x₁ → ⊤} (suc₁ n) tt)) (cong proj₁ e₁) ≡ cong (λ _ → (_,_ {B = λ x₁ → ⊤} (suc₁ n) tt)) (cong proj₁ e₁) ,
-            e₂ ∈ x ≡ y , 
-            e₃ ∈ subst (λ n → μ (VecD X) (n , tt)) (cong proj₁ e₁) xs ≡ ys , nil
-
 
 ΔHOUnification₆ : (X : Set) → Telescope 7
 ΔHOUnification₆ X = n ∈ μ NatD tt , x ∈ X , y ∈ X , xs ∈ μ (VecD X) (n , tt) , ys ∈ μ (VecD X) (n , tt) ,
@@ -288,19 +314,23 @@ HOUnify₆ X = UReorder f3 f0 (λ _ → _ , there λ xs → there λ ys → here
 
 HOUnify₅ : (X : Set) → Unification (ΔHOUnification₅ X)
 HOUnify₅ X = UAddRule₂ (there λ n → there λ x → there λ y → there λ xs → there λ ys → here n) 
-    (e ∈ tt ≡ tt , nil) (λ x e → HOUnification (λ ntt → suc₁ (proj₁ ntt) , tt) (λ _ → suc₁ x , tt) id (HOUnify₅ₗ X x) (x , tt) (x , tt) refl refl e , tt) 
+    (λ _ → e ∈ tt ≡ tt , nil) (λ x e → HOUnification (λ ntt → suc₁ (proj₁ ntt) , tt) (λ _ → suc₁ x , tt) id (HOUnify₅ₗ X x) (x , tt) (x , tt) refl refl e , tt) 
         (λ x xs → HOUnification' (λ ntt → suc₁ (proj₁ ntt) , tt) (λ _ → suc₁ x , tt) id (HOUnify₅ₗ X x) (x , tt) (x , tt) refl refl (proj₁ xs)) 
         (λ x e → HOUnification'∘HOUnification (λ ntt → suc₁ (proj₁ ntt) , tt) (λ _ → suc₁ x , tt) id (HOUnify₅ₗ X x) (x , tt) (x , tt) refl refl e) 
-    (UAddRule₁ (there λ n → there λ x → there λ y → there λ xs → there λ ys → here tt) nil 
+    (UAddRule₁ (there λ n → there λ x → there λ y → there λ xs → there λ ys → here tt) (λ _ → nil) 
         (λ _ → injectivity⊤) (λ _ → injectivity⊤') (λ _ → injectivity⊤'∘injectivity⊤) 
             (HOUnify₆ X))  
 
-HOUnify₄' : (X : Set) → Unification (ΔHOUnification₄' X)
-HOUnify₄' X = {!   !}
-
 HOUnify₄ : (X : Set) → Unification (ΔHOUnification₄ X)
 HOUnify₄ X = UCombineΣ (λ n → n) (λ n → n) (there λ n → there λ x → there λ y → there λ xs → there λ ys → here n) 
-    (HOUnify₄' X) 
+    (UAddRule₁ (there λ n → there λ x → there λ y → there λ xs → there λ ys → there λ e₁ → here (n , e₁)) 
+      (λ where (n , e₁) → p ∈ cong (λ ntt → (_,_ {B = λ x₁ → ⊤} (suc₁ (proj₁ ntt)) tt)) e₁ ≡ cong (λ _ → (_,_ {B = λ x₁ → ⊤} (suc₁ n) tt)) e₁ , nil) 
+      (λ x p → pConv (proj₂ x) p , tt) (λ x p → pConv' (proj₂ x) (proj₁ p)) (λ x p → pConv'∘pConv (proj₂ x) p) 
+        (UAddRule₁ (there λ n → there λ x → there λ y → there λ xs → there λ ys → there λ e₁ → there λ p → there λ e₂ → here (n , xs , ys , e₁)) 
+          (λ where (n , xs , ys , e₁) → e₃ ∈ subst (μ (VecD X)) e₁ xs ≡ ys , nil) 
+          (λ where (n , xs , ys , e₁) e₃ → e₃Conv e₁ e₃ , tt) 
+          (λ where (n , xs , ys , e₁) (e₃ , tt) → e₃Conv' e₁ e₃) 
+          (λ where (n , xs , ys , e₁) e₃ → e₃Conv'∘e₃Conv e₁ e₃) (HOUnify₅ X))) 
     
 HOUnify₃ : (X : Set) → Unification (ΔHOUnification₃ X)
 HOUnify₃ X = UReplaceElem {Y₂ = λ where (n , x , xs , e₁ , y) → x ≡ y} (there λ n → there λ x → there λ y → there λ xs → there λ ys → there λ e₁ 

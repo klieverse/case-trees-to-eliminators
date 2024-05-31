@@ -1,4 +1,3 @@
-{-# OPTIONS --allow-unsolved-metas #-}
 module Indexed.translation where 
 
 open import Non_Indexed.telescope
@@ -27,7 +26,7 @@ eval : {Δ : Telescope n}{T : ⟦ Δ ⟧telD → Set ℓ} →
   (ct : CaseTree Δ T) (args : ⟦ Δ ⟧telD) 
   → T args 
 eval (leaf f) args = f args
-eval {Δ = Δ} {T} (node {is = is} {D = D} p bs) args 
+eval {T = T} (node {is = is} {D = D} p bs) args 
     = case-μ D (λ d' x' → (d' , x') ≡ (d , ret) → T args) cs d ret refl where 
 
   d : ⟦ is ⟧telD 
@@ -40,21 +39,21 @@ eval {Δ = Δ} {T} (node {is = is} {D = D} p bs) args
   -- from a constructor instantiation that is equivalent to the value 
   -- that we split on get the return type
   cs : (d' : ⟦ is ⟧telD) (x : ⟦ D ⟧ (μ D) d') → (d' , ⟨ x ⟩) ≡ (d , ret) → T args
-  cs d' (k , xs) e = subst T (subst (λ xs → shrink p xs ≡ args) (sym (unify'∘unify (proj₁ (bs k)) (expand p (λ ys → ⟨ k , telToCon ys ⟩) args
-        (conToTel (subst (⟦ proj₂ (D k) ⟧c (μ D)) qd xs)) q))) (shrink∘expand p args _ q)) r where 
+  cs d' (cᵢ , c) e = subst T (subst (λ xs → shrink p xs ≡ args) (sym (unify'∘unify (proj₁ (bs cᵢ)) (expand p (λ xs → ⟨ cᵢ , telToCon xs ⟩) args
+        (conToTel (subst (⟦ proj₂ (D cᵢ) ⟧c (μ D)) qd c)) q))) (shrink∘expand p args _ q)) r where 
   
     qd : d' ≡ d 
     qd = cong proj₁ e
 
-    q : ⟨ k , telToCon (conToTel (subst (⟦ proj₂ (D k) ⟧c (μ D)) qd xs)) ⟩ ≡ ret 
-    q = J (λ dret e → ⟨ k , telToCon (conToTel (subst (⟦ proj₂ (D k) ⟧c (μ D)) (cong proj₁ e) xs)) ⟩ ≡ (proj₂ dret)) 
-          (cong (λ x → ⟨ k , x ⟩) (telToCon∘conToTel xs)) e
+    q : ⟨ cᵢ , telToCon (conToTel (subst (⟦ proj₂ (D cᵢ) ⟧c (μ D)) qd c)) ⟩ ≡ ret 
+    q = J (λ dret e → ⟨ cᵢ , telToCon (conToTel (subst (⟦ proj₂ (D cᵢ) ⟧c (μ D)) (cong proj₁ e) c)) ⟩ ≡ (proj₂ dret)) 
+          (cong (λ c → ⟨ cᵢ , c ⟩) (telToCon∘conToTel c)) e
     
     -- recursively evaluate the case tree
-    r : T (shrink p (unify' (proj₁ (bs k)) (unify (proj₁ (bs k)) (expand p (λ ys → ⟨ k , telToCon ys ⟩) args
-            (conToTel (subst (⟦ proj₂ (D k) ⟧c (μ D)) qd xs)) q)))) 
-    r = eval (proj₂ (bs k)) (unify (proj₁ (bs k)) (expand p (λ ys → ⟨ k , telToCon ys ⟩) args 
-        (conToTel (subst (⟦ proj₂ (D k) ⟧c (μ D)) qd xs)) q))
+    r : T (shrink p (unify' (proj₁ (bs cᵢ)) (unify (proj₁ (bs cᵢ)) (expand p (λ xs → ⟨ cᵢ , telToCon xs ⟩) args
+            (conToTel (subst (⟦ proj₂ (D cᵢ) ⟧c (μ D)) qd c)) q)))) 
+    r = eval (proj₂ (bs cᵢ)) (unify (proj₁ (bs cᵢ)) (expand p (λ xs → ⟨ cᵢ , telToCon xs ⟩) args 
+        (conToTel (subst (⟦ proj₂ (D cᵢ) ⟧c (μ D)) qd c)) q))
 
 
 

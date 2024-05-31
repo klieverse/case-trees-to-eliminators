@@ -349,3 +349,30 @@ flipSquare∘flipSquare refl refl refl r refl = refl
         (cong (λ xs₁ → b (f' xs₁)) e)) r ≡ s) 
     → Π-cong→create {a = a} {b} {f'} e r s (Π-create→cong {a = a} {b} {f'} e r s xs) ≡ xs) 
       (λ s e → refl) e
+
+
+
+cong∘cong→cong : ∀ {ℓ ℓ'} {A : Set ℓ} {X Y : Set ℓ'} {a b : X → Y} {f' : A → X}
+  {u v : A}(e : u ≡ v) (r : a (f' u) ≡ b (f' u)) (s : a (f' v) ≡ b (f' v)) 
+  → subst (λ ab → proj₁ ab ≡ proj₂ ab) (Π-create r s) (cong a (cong f' e)) ≡ cong b (cong f' e)
+  → subst (λ ab → proj₁ ab ≡ proj₂ ab) (Π-create r s) (cong (λ xs → a (f' xs)) e) ≡ cong (λ xs → b (f' xs)) e
+cong∘cong→cong {a = a} {b} {f'} {u} {v} e r s e' = J (λ v e → (s : a (f' v) ≡ b (f' v)) → subst (λ ab → proj₁ ab ≡ proj₂ ab) (Π-create r s) (cong a (cong f' e)) ≡ cong b (cong f' e)
+  → subst (λ ab → proj₁ ab ≡ proj₂ ab) (Π-create r s) (cong (λ xs → a (f' xs)) e) ≡ cong (λ xs → b (f' xs)) e) 
+    (λ s₁ x → x) e s e'
+
+cong→cong∘cong : ∀ {ℓ ℓ'} {A : Set ℓ} {X Y : Set ℓ'} {a b : X → Y} {f' : A → X}
+  {u v : A}(e : u ≡ v) (r : a (f' u) ≡ b (f' u)) (s : a (f' v) ≡ b (f' v)) 
+  → subst (λ ab → proj₁ ab ≡ proj₂ ab) (Π-create r s) (cong (λ xs → a (f' xs)) e) ≡ cong (λ xs → b (f' xs)) e
+  → subst (λ ab → proj₁ ab ≡ proj₂ ab) (Π-create r s) (cong a (cong f' e)) ≡ cong b (cong f' e)
+cong→cong∘cong {a = a} {b} {f'} {u} {v} e r s e' = J (λ v e → (s : a (f' v) ≡ b (f' v))
+  → subst (λ ab → proj₁ ab ≡ proj₂ ab) (Π-create r s) (cong (λ xs → a (f' xs)) e) ≡ cong (λ xs → b (f' xs)) e
+  → subst (λ ab → proj₁ ab ≡ proj₂ ab) (Π-create r s) (cong a (cong f' e)) ≡ cong b (cong f' e)) 
+    (λ s₁ x → x) e s e'
+
+cong→cong∘cong∘cong∘cong→cong : ∀ {ℓ ℓ'} {A : Set ℓ} {X Y : Set ℓ'} {a b : X → Y} {f' : A → X}
+  {u v : A}(e : u ≡ v) (r : a (f' u) ≡ b (f' u)) (s : a (f' v) ≡ b (f' v)) 
+  → (e' : subst (λ ab → proj₁ ab ≡ proj₂ ab) (Π-create r s) (cong a (cong f' e)) ≡ cong b (cong f' e))
+  → cong→cong∘cong e r s (cong∘cong→cong e r s e') ≡ e'
+cong→cong∘cong∘cong∘cong→cong {a = a} {b} {f'} {u} {v} e r s e' = J (λ v e → (s : a (f' v) ≡ b (f' v)) → (e' : subst (λ ab → proj₁ ab ≡ proj₂ ab) (Π-create r s) (cong a (cong f' e)) ≡ cong b (cong f' e))
+  → cong→cong∘cong e r s (cong∘cong→cong e r s e') ≡ e') 
+    (λ s₁ x → refl) e s e'

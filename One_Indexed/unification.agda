@@ -1,4 +1,3 @@
-{-# OPTIONS --allow-unsolved-metas #-}
 module One_Indexed.unification where
 
 open import lib
@@ -39,7 +38,7 @@ solution'∘solution {t = t} xe = J (λ x e → (t , refl) ≡ (x , e)) refl (pr
 doSolutionTel : {Δ : Telescope n} {X : Set} {A : X → Set}
     (p : Δ [ k ]∶Σ[ Σ[ x ∈ X ] (A x) ] (λ xa → A (proj₁ xa)) ∶ (λ t x → (proj₂ t) ≡ x))
     → Telescope (n + zero ∸ 2)
-doSolutionTel p = updateTel₂ p nil (λ xa → solution) (λ xa → solution') (λ xa → solution'∘solution) 
+doSolutionTel p = updateTel₂ p (λ _ → nil) (λ xa → solution) (λ xa → solution') (λ xa → solution'∘solution) 
 
 
 -- symmetric solution rule
@@ -56,7 +55,7 @@ solution₁'∘solution₁ {t = t} xe = J₁ (λ x e → (t , refl) ≡ (x , e))
 doSolutionTel₁ : {Δ : Telescope n} {X : Set} {A : X → Set}
     (p : Δ [ k ]∶Σ[ Σ[ x ∈ X ] (A x) ] (λ xa → A (proj₁ xa)) ∶ (λ t x → x ≡ (proj₂ t))) 
     → Telescope (n + zero ∸ 2)
-doSolutionTel₁ p = updateTel₂ p nil (λ xa → solution₁) (λ xa → solution₁') (λ xa → solution₁'∘solution₁) 
+doSolutionTel₁ p = updateTel₂ p (λ _ → nil) (λ xa → solution₁) (λ xa → solution₁') (λ xa → solution₁'∘solution₁) 
 
 
 
@@ -77,7 +76,7 @@ deletion'∘deletion e = K (λ e → deletion' (deletion e) ≡ e) refl e
 doDeletionTel : {Δ : Telescope n} {D : Set} {X : D → Set} 
     → {t : (d : D) → X d}  (p : Δ [ k ]∶Σ[ D ] (λ d → t d ≡ t d))
     → Telescope (n + zero ∸ 1)
-doDeletionTel p = updateTel₁ p nil (λ _ → deletion) (λ _ → deletion') (λ _ → deletion'∘deletion)
+doDeletionTel p = updateTel₁ p (λ _ → nil) (λ _ → deletion) (λ _ → deletion') (λ _ → deletion'∘deletion)
 
 
 -- the conflict rule
@@ -104,7 +103,7 @@ doConflictTel : {Δ : Telescope n} {D : DataDesc m}{D' : Set}
         → {s t : D' → μ D} (p : Δ [ k ]∶Σ[ D' ] (λ d' → (s d') ≡ (t d')))
         → (e' : (d : D') → ¬ (conᵢ (s d) ≡ conᵢ (t d)))
         → Telescope (n + 1 ∸ 1)
-doConflictTel {s = s} {t = t} p e' = updateTel₁ p (cons ⊥ (λ b → nil)) (λ d' → conflict (s d') (t d') (e' d')) 
+doConflictTel {s = s} {t = t} p e' = updateTel₁ p (λ _ → cons ⊥ (λ b → nil)) (λ d' → conflict (s d') (t d') (e' d')) 
     (λ d' → conflict' (s d') (t d') (e' d')) (λ d' → conflict'∘conflict (s d') (t d') (e' d')) 
 
 

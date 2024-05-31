@@ -1,4 +1,3 @@
--- {-# OPTIONS --allow-unsolved-metas #-}
 module One_Indexed.casetrees where
     
 import Non_Indexed.datatypes as NI

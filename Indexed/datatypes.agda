@@ -1,4 +1,3 @@
--- {-# OPTIONS --allow-unsolved-metas #-}
 module Indexed.datatypes where
 
 open import lib

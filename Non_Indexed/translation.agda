@@ -1,4 +1,3 @@
-{-# OPTIONS --allow-unsolved-metas #-}
 module Non_Indexed.translation where 
 
 open import Non_Indexed.datatypes
@@ -26,7 +25,7 @@ eval : {Δ : Telescope n} {T : ⟦ Δ ⟧telD → Set ℓ}
   (ct : CaseTree Δ T) (args : ⟦ Δ ⟧telD)
   → T args
 eval (leaf f) args = f args
-eval {Δ = Δ} {T} (node {D = D} p bs) args 
+eval {T = T} (node {D = D} p bs) args 
   = case-μ D (λ x → ret ≡ x → T args) cs ret refl where 
 
     -- value that we split on
@@ -36,13 +35,13 @@ eval {Δ = Δ} {T} (node {D = D} p bs) args
     -- from a constructor instantiation that is equivalent to the value 
     -- that we split on get the return type
     cs : (x : ⟦ D ⟧ (μ D)) → ret ≡ ⟨ x ⟩ → T args
-    cs (k , xs) e = subst T (shrink∘expand p args _ q) r where
+    cs (cᵢ , c) e = subst T (shrink∘expand p args _ q) r where
 
-        q : ⟨ k , telToCon (conToTel xs) ⟩ ≡ ret
-        q = trans (cong (λ x → ⟨ k , x ⟩) (telToCon∘conToTel xs)) (sym e)
+        q : ⟨ cᵢ , telToCon (conToTel c) ⟩ ≡ ret
+        q = trans (cong (λ x → ⟨ cᵢ , x ⟩) (telToCon∘conToTel c)) (sym e)
 
-        r : T (shrink p (expand p (λ ys → ⟨ k , telToCon ys ⟩) args (conToTel xs) q))
-        r = eval (bs k) (expand p _ args (conToTel xs) q)
+        r : T (shrink p (expand p (λ xs → ⟨ cᵢ , telToCon xs ⟩) args (conToTel c) q))
+        r = eval (bs cᵢ) (expand p _ args (conToTel c) q)
 
 
 -- example translation not function

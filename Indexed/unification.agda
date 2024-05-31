@@ -1,4 +1,3 @@
-{-# OPTIONS --allow-unsolved-metas #-}
 module Indexed.unification where
 
 open import Indexed.datatypes
@@ -38,7 +37,7 @@ solution'∘solution {t = t} xe = J (λ x e → (t , refl) ≡ (x , e)) refl (pr
 doSolutionTel : {Δ : Telescope n} {X : Set} {A : X → Set}
     (p : Δ [ k ]∶Σ[ Σ[ x ∈ X ] (A x) ] (λ xa → A (proj₁ xa)) ∶ (λ t x → (proj₂ t) ≡ x))
     → Telescope (n + zero ∸ 2)
-doSolutionTel p = updateTel₂ p nil (λ xa → solution) (λ xa → solution') (λ xa → solution'∘solution) 
+doSolutionTel p = updateTel₂ p (λ _ → nil) (λ xa → solution) (λ xa → solution') (λ xa → solution'∘solution) 
 
 
 -- symmetric solution rule
@@ -55,7 +54,7 @@ solution₁'∘solution₁ {t = t} xe = J₁ (λ x e → (t , refl) ≡ (x , e))
 doSolutionTel₁ : {Δ : Telescope n} {X : Set} {A : X → Set}
     (p : Δ [ k ]∶Σ[ Σ[ x ∈ X ] (A x) ] (λ xa → A (proj₁ xa)) ∶ (λ t x → x ≡ (proj₂ t))) 
     → Telescope (n + zero ∸ 2)
-doSolutionTel₁ p = updateTel₂ p nil (λ xa → solution₁) (λ xa → solution₁') (λ xa → solution₁'∘solution₁) 
+doSolutionTel₁ p = updateTel₂ p (λ _ → nil) (λ xa → solution₁) (λ xa → solution₁') (λ xa → solution₁'∘solution₁) 
 
 
 K : ∀ {ℓ ℓ'} {A : Set ℓ} {x : A} (P : x ≡ x → Set ℓ') → (p : P refl) → (e : x ≡ x) → P e
@@ -75,7 +74,7 @@ deletion'∘deletion e = K (λ e → deletion' (deletion e) ≡ e) refl e
 doDeletionTel : {Δ : Telescope n} {D : Set} {X : D → Set} 
     → {t : (d : D) → X d}  (p : Δ [ k ]∶Σ[ D ] (λ d → t d ≡ t d))
     → Telescope (n + zero ∸ 1)
-doDeletionTel p = updateTel₁ p nil (λ _ → deletion) (λ _ → deletion') (λ _ → deletion'∘deletion)
+doDeletionTel p = updateTel₁ p (λ _ → nil) (λ _ → deletion) (λ _ → deletion') (λ _ → deletion'∘deletion)
 
 
 
@@ -105,7 +104,7 @@ doConflictTel : {Δn IΔn Dn i : ℕ} {Δ : Telescope Δn} {IΔ : Telescope IΔn
         → (p : Δ [ i ]∶Σ[ X ] (λ x → d₁ x ≡ d₂ x ) ∶ (λ x e → subst (μ D) e (x₁ x) ≡ x₂ x))
         → (e' : (x : X) → ¬ (conᵢ (x₁ x) ≡ conᵢ (x₂ x)))
         → Telescope (Δn + 1 ∸ 2)
-doConflictTel {d₁ = d₁} {d₂} {x₁} {x₂} p e' = updateTel₂ p (cons ⊥ (λ b → nil)) 
+doConflictTel {d₁ = d₁} {d₂} {x₁} {x₂} p e' = updateTel₂ p (λ _ → cons ⊥ (λ b → nil)) 
     (λ d' → conflict (x₁ d') (x₂ d') (e' d')) (λ d' → conflict' (x₁ d') (x₂ d') (e' d')) 
         (λ d' → conflict'∘conflict (x₁ d') (x₂ d') (e' d'))
 

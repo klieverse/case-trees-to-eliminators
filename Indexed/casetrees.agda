@@ -1,4 +1,3 @@
-{-# OPTIONS --allow-unsolved-metas #-}
 module Indexed.casetrees where
     
 open import Indexed.datatypes

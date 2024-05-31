@@ -1,4 +1,3 @@
-{-# OPTIONS --allow-unsolved-metas #-}
 module Non_Indexed.telescope where 
 
 open import Non_Indexed.datatypes
@@ -454,53 +453,53 @@ combineΣ'∘combineΣ A B (there k) (x , xs) = cong (x ,_) (combineΣ'∘combin
 -- replace an element B a at position k with telescope fTel
 updateTel₁ : {Δ : Telescope n} {A : Set}{B : A → Set}
     → (p : Δ [ k ]∶Σ[ A ] B) 
-    → (fTel : Telescope m)
-    → (f : (a : A) → B a → ⟦ fTel ⟧telD)
-    → (f' : (a : A) → ⟦ fTel ⟧telD → B a)
+    → (fTel : (a : A) → Telescope m)
+    → (f : (a : A) → B a → ⟦ fTel a ⟧telD)
+    → (f' : (a : A) → ⟦ fTel a ⟧telD → B a)
     → (f'∘f : (a : A) → (b : B a) → f' a (f a b) ≡ b)
     → Telescope (n + m ∸ 1)
 updateTel₁ {n = suc n} {m = m} {Δ = cons S E} (here a) fTel f f' f'∘f 
-  = subst Telescope (+-comm m n) (mergeTel fTel E (f' a)) 
+  = subst Telescope (+-comm m n) (mergeTel (fTel a) E (f' a)) 
 updateTel₁ {Δ = cons S E} (there p) fTel f f' f'∘f = cons S (λ s → updateTel₁ (p s) fTel f f' f'∘f) 
 
 update₁ : {Δ : Telescope n} {A : Set}{B : A → Set}
     → (p : Δ [ k ]∶Σ[ A ] B) 
-    → (fTel : Telescope m)
-    → (f : (a : A) → B a → ⟦ fTel ⟧telD)
-    → (f' : (a : A) → ⟦ fTel ⟧telD → B a)
+    → (fTel : (a : A) → Telescope m)
+    → (f : (a : A) → B a → ⟦ fTel a ⟧telD)
+    → (f' : (a : A) → ⟦ fTel a ⟧telD → B a)
     → (f'∘f : (a : A) → (b : B a) → f' a (f a b) ≡ b)
     → ⟦ Δ ⟧telD
     → ⟦ updateTel₁ p fTel f f' f'∘f ⟧telD
 update₁ {n = suc n} {m = m} {Δ = cons S E} (here a) fTel f f' f'∘f (b , xs)
-  =  J (λ _ e → ⟦ subst Telescope e (mergeTel fTel E (f' a)) ⟧telD) 
+  =  J (λ _ e → ⟦ subst Telescope e (mergeTel (fTel a) E (f' a)) ⟧telD) 
     (merge (f a b) (subst (λ e → ⟦ E e ⟧telD) (sym (f'∘f a b)) xs))
     (+-comm m n)
 update₁ {Δ = cons S E} (there p) fTel f f' f'∘f (x , xs) = x , update₁ (p x) fTel f f' f'∘f xs
 
 update₁' : {Δ : Telescope n} {A : Set}{B : A → Set}
     → (p : Δ [ k ]∶Σ[ A ] B) 
-    → (fTel : Telescope m)
-    → (f : (a : A) → B a → ⟦ fTel ⟧telD)
-    → (f' : (a : A) → ⟦ fTel ⟧telD → B a)
+    → (fTel : (a : A) → Telescope m)
+    → (f : (a : A) → B a → ⟦ fTel a ⟧telD)
+    → (f' : (a : A) → ⟦ fTel a ⟧telD → B a)
     → (f'∘f : (a : A) → (b : B a) → f' a (f a b) ≡ b)
     → ⟦ updateTel₁ p fTel f f' f'∘f ⟧telD
     → ⟦ Δ ⟧telD
 update₁' {n = suc n} {m = m} {Δ = cons S E} (here a) fTel f f' f'∘f xs 
-  = f' a (mproj₁ (J' (λ _ e → ⟦ subst Telescope e (mergeTel fTel E (f' a)) ⟧telD) (+-comm m n) xs)) , 
-    mproj₂ {X = fTel} {Y = E} (J' (λ _ e → ⟦ subst Telescope e (mergeTel fTel E (f' a)) ⟧telD) (+-comm m n) xs) 
+  = f' a (mproj₁ (J' (λ _ e → ⟦ subst Telescope e (mergeTel (fTel a) E (f' a)) ⟧telD) (+-comm m n) xs)) , 
+    mproj₂ {X = fTel a} {Y = E} (J' (λ _ e → ⟦ subst Telescope e (mergeTel (fTel a) E (f' a)) ⟧telD) (+-comm m n) xs) 
 update₁' {Δ = cons S E} (there p) fTel f f' f'∘f (x , xs) = x , update₁' (p x) fTel f f' f'∘f xs
 
 update₁'∘update₁ : {Δ : Telescope n} {A : Set}{B : A → Set}
     → (p : Δ [ k ]∶Σ[ A ] B) 
-    → (fTel : Telescope m)
-    → (f : (a : A) → B a → ⟦ fTel ⟧telD)
-    → (f' : (a : A) → ⟦ fTel ⟧telD → B a)
+    → (fTel : (a : A) → Telescope m)
+    → (f : (a : A) → B a → ⟦ fTel a ⟧telD)
+    → (f' : (a : A) → ⟦ fTel a ⟧telD → B a)
     → (f'∘f : (a : A) → (b : B a) → f' a (f a b) ≡ b)
     → (xs : ⟦ Δ ⟧telD)
     → update₁' p fTel f f' f'∘f (update₁ p fTel f f' f'∘f xs) ≡ xs 
 update₁'∘update₁ {n = suc n} {m = m} {Δ = cons S E} (here a) fTel f f' f'∘f (b , xs) 
-  = subst (λ e₁ → (f' a (mproj₁ e₁) , mproj₂ {X = fTel} {Y = E} e₁) ≡ (b , xs))
-      (sym (J'∘J (λ z e → ⟦ subst Telescope e (mergeTel fTel E (f' a)) ⟧telD) (merge (f a b) (subst (λ e → ⟦ E e ⟧telD) (sym (f'∘f a b)) xs)) (+-comm m n))) 
+  = subst (λ e₁ → (f' a (mproj₁ e₁) , mproj₂ {X = fTel a} {Y = E} e₁) ≡ (b , xs))
+      (sym (J'∘J (λ z e → ⟦ subst Telescope e (mergeTel (fTel a) E (f' a)) ⟧telD) (merge (f a b) (subst (λ e → ⟦ E e ⟧telD) (sym (f'∘f a b)) xs)) (+-comm m n))) 
       (subst (λ axs → (f' a (proj₁ axs) , snd axs) ≡ (b , xs)) (mproj∘merge (f a b) (subst (λ e → ⟦ E e ⟧telD) (sym (f'∘f a b)) xs)) 
         (J (λ x₁ e₁ → (x₁ , subst (λ e → ⟦ E e ⟧telD) e₁ xs) ≡ (b , xs)) refl (sym (f'∘f a b)))) 
 update₁'∘update₁ {Δ = cons S E} (there p) fTel f f' f'∘f (x , xs) 
@@ -510,57 +509,57 @@ update₁'∘update₁ {Δ = cons S E} (there p) fTel f f' f'∘f (x , xs)
 -- replace the elements (b : B a) and C a b at position k and k + 1 with telescope fTel
 updateTel₂ : {Δ : Telescope n} {A : Set}{B : A → Set}{C : (a : A)(b : B a) → Set}
     → (p : Δ [ k ]∶Σ[ A ] B ∶ C) 
-    → (fTel : Telescope m)
-    → (f : (a : A) → Σ (B a) (C a) → ⟦ fTel ⟧telD)
-    → (f' : (a : A) → ⟦ fTel ⟧telD → Σ (B a) (C a))
+    → (fTel : (a : A) → Telescope m)
+    → (f : (a : A) → Σ (B a) (C a) → ⟦ fTel a ⟧telD)
+    → (f' : (a : A) → ⟦ fTel a ⟧telD → Σ (B a) (C a))
     → (f'∘f : (a : A) (c : Σ (B a) (C a)) → f' a (f a c) ≡ c)
     → Telescope (n + m ∸ 2)
 updateTel₂ {n = suc (suc n)} {m = m} {Δ = cons S _} (here a {E = E}) fTel f f' f'∘f 
-  = subst Telescope (+-comm m n) (mergeTel fTel (λ ab → E (proj₁ ab) (proj₂ ab)) (f' a)) 
+  = subst Telescope (+-comm m n) (mergeTel (fTel a) (λ ab → E (proj₁ ab) (proj₂ ab)) (f' a)) 
 updateTel₂ {Δ = cons S E} (there p) fTel f f' f'∘f = cons S (λ s → updateTel₂ (p s) fTel f f' f'∘f) 
 
 update₂ : {Δ : Telescope n} {A : Set}{B : A → Set}{C : (a : A)(b : B a) → Set}
     → (p : Δ [ k ]∶Σ[ A ] B ∶ C) 
-    → (fTel : Telescope m)
-    → (f : (a : A) → Σ (B a) (C a) → ⟦ fTel ⟧telD)
-    → (f' : (a : A) → ⟦ fTel ⟧telD → Σ (B a) (C a))
+    → (fTel : (a : A) → Telescope m)
+    → (f : (a : A) → Σ (B a) (C a) → ⟦ fTel a ⟧telD)
+    → (f' : (a : A) → ⟦ fTel a ⟧telD → Σ (B a) (C a))
     → (f'∘f : (a : A) (c : Σ (B a) (C a)) → f' a (f a c) ≡ c)
     → ⟦ Δ ⟧telD
     → ⟦ updateTel₂ p fTel f f' f'∘f ⟧telD
 update₂ {n = suc (suc n)} {m = m} {Δ = cons S E} (here a {E = Δ}) fTel f f' f'∘f (b , c , xs)
-  = J (λ _ e → ⟦ subst Telescope e (mergeTel fTel (λ ab → Δ (proj₁ ab) (snd ab)) (f' a)) ⟧telD) 
+  = J (λ _ e → ⟦ subst Telescope e (mergeTel (fTel a) (λ ab → Δ (proj₁ ab) (snd ab)) (f' a)) ⟧telD) 
     (merge (f a (b , c)) (subst (λ e → ⟦ Δ (proj₁ e) (proj₂ e) ⟧telD) (subst (λ e₁ → (b , c) ≡ (proj₁ e₁ , snd e₁)) (sym (f'∘f a (b , c))) refl) xs))
     (+-comm m n) 
 update₂ {Δ = cons S E} (there p) fTel f f' f'∘f (x , xs) = x , update₂ (p x) fTel f f' f'∘f xs
 
 update₂' : {Δ : Telescope n} {A : Set}{B : A → Set}{C : (a : A)(b : B a) → Set}
     → (p : Δ [ k ]∶Σ[ A ] B ∶ C) 
-    → (fTel : Telescope m)
-    → (f : (a : A) → Σ (B a) (C a) → ⟦ fTel ⟧telD)
-    → (f' : (a : A) → ⟦ fTel ⟧telD → Σ (B a) (C a))
+    → (fTel : (a : A) → Telescope m)
+    → (f : (a : A) → Σ (B a) (C a) → ⟦ fTel a ⟧telD)
+    → (f' : (a : A) → ⟦ fTel a ⟧telD → Σ (B a) (C a))
     → (f'∘f : (a : A) (c : Σ (B a) (C a)) → f' a (f a c) ≡ c)
     → ⟦ updateTel₂ p fTel f f' f'∘f ⟧telD
     → ⟦ Δ ⟧telD
 update₂' {n = suc (suc n)} {m = m} {Δ = cons S E} (here a {E = Δ}) fTel f f' f'∘f xs 
   = proj₁ (f' a (mproj₁ mTel)) , proj₂ (f' a (mproj₁ mTel)) , 
-    mproj₂ {X = fTel} {Y = λ ab → Δ (proj₁ ab) (snd ab)} mTel where
+    mproj₂ {X = fTel a} {Y = λ ab → Δ (proj₁ ab) (snd ab)} mTel where
 
-  mTel : ⟦ mergeTel fTel (λ ab → Δ (proj₁ ab) (snd ab)) (f' a) ⟧telD
-  mTel = J' (λ _ e → ⟦ subst Telescope e (mergeTel fTel (λ ab → Δ (proj₁ ab) (snd ab)) (f' a)) ⟧telD) (+-comm m n) xs 
+  mTel : ⟦ mergeTel (fTel a) (λ ab → Δ (proj₁ ab) (snd ab)) (f' a) ⟧telD
+  mTel = J' (λ _ e → ⟦ subst Telescope e (mergeTel (fTel a) (λ ab → Δ (proj₁ ab) (snd ab)) (f' a)) ⟧telD) (+-comm m n) xs 
 
 update₂' {Δ = cons S E} (there p) fTel f f' f'∘f (x , xs) = x , update₂' (p x) fTel f f' f'∘f xs
 
 update₂'∘update₂ : {Δ : Telescope n} {A : Set}{B : A → Set}{C : (a : A)(b : B a) → Set}
     → (p : Δ [ k ]∶Σ[ A ] B ∶ C) 
-    → (fTel : Telescope m)
-    → (f : (a : A) → Σ (B a) (C a) → ⟦ fTel ⟧telD)
-    → (f' : (a : A) → ⟦ fTel ⟧telD → Σ (B a) (C a))
+    → (fTel : (a : A) → Telescope m)
+    → (f : (a : A) → Σ (B a) (C a) → ⟦ fTel a ⟧telD)
+    → (f' : (a : A) → ⟦ fTel a ⟧telD → Σ (B a) (C a))
     → (f'∘f : (a : A) (c : Σ (B a) (C a)) → f' a (f a c) ≡ c)
     → (xs : ⟦ Δ ⟧telD)
     → update₂' p fTel f f' f'∘f (update₂ p fTel f f' f'∘f xs) ≡ xs 
 update₂'∘update₂ {n = suc (suc n)} {m = m} {Δ = cons S E} (here a {E = Δ}) fTel f f' f'∘f (b , c , xs) 
-  = subst (λ e₁ → (proj₁ (f' a (mproj₁ e₁)) , proj₂ (f' a (mproj₁ e₁)) , mproj₂ {X = fTel} {Y = λ ab → Δ (proj₁ ab) (snd ab)} e₁) ≡ (b , c , xs)) 
-      (sym (J'∘J (λ z e → ⟦ subst Telescope e (mergeTel fTel (λ ab → Δ (proj₁ ab) (snd ab)) (f' a)) ⟧telD) 
+  = subst (λ e₁ → (proj₁ (f' a (mproj₁ e₁)) , proj₂ (f' a (mproj₁ e₁)) , mproj₂ {X = fTel a} {Y = λ ab → Δ (proj₁ ab) (snd ab)} e₁) ≡ (b , c , xs)) 
+      (sym (J'∘J (λ z e → ⟦ subst Telescope e (mergeTel (fTel a) (λ ab → Δ (proj₁ ab) (snd ab)) (f' a)) ⟧telD) 
         (merge (f a (b , c)) (subst (λ e → ⟦ Δ (proj₁ e) (proj₂ e) ⟧telD) (subst (λ e₁ → (b , c) ≡ (proj₁ e₁ , snd e₁)) (sym (f'∘f a (b , c))) refl) xs)) 
         (+-comm m n)))
       (subst (λ axs → (proj₁ (f' a (proj₁ axs)) , snd (f' a (proj₁ axs)) , proj₂ axs) ≡ (b , c , xs)) 
