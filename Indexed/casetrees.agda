@@ -1,3 +1,4 @@
+{-# OPTIONS --safe #-}
 module Indexed.casetrees where
     
 open import Indexed.datatypes
@@ -95,7 +96,7 @@ CTFlip {A} w = node (there (λ x → there (λ y → there (λ z → there (λ t
   Δsplit₆ = r ∈ μ (≡D w) (w , tt) , ewy ∈ idp w ≡ r , nil
   
   unifyFlip₆ : Unification Δsplit₆
-  unifyFlip₆ = Usolution {A = λ a → μ (≡D a) (a , tt)} (here (w , idp w)) (UEnd nil)
+  unifyFlip₆ = Usolution {B = λ a → μ (≡D a) (a , tt)} (here (w , idp w)) (UEnd nil)
 
   Δsplit₅ : Telescope 4 
   Δsplit₅ = l ∈ μ (≡D w) (w , tt) , r ∈ μ (≡D w) (w , tt) ,
@@ -103,7 +104,7 @@ CTFlip {A} w = node (there (λ x → there (λ y → there (λ z → there (λ t
   
   unifyFlip₅ : Unification Δsplit₅
   unifyFlip₅ = UReorder f1 f0 (λ _ → _ , there (λ l → here tt))
-                  (Usolution {A = λ a → μ (≡D a) (a , tt)} (here (w , idp w)) unifyFlip₆) 
+                  (Usolution {B = λ a → μ (≡D a) (a , tt)} (here (w , idp w)) unifyFlip₆) 
 
   Δsplit₄ : Telescope 6 
   Δsplit₄ = b ∈ μ (≡D w) (w , tt) , l ∈ μ (≡D w) (w , tt) , r ∈ μ (≡D w) (w , tt) ,
@@ -111,7 +112,7 @@ CTFlip {A} w = node (there (λ x → there (λ y → there (λ z → there (λ t
   
   unifyFlip₄ : Unification Δsplit₄
   unifyFlip₄ = UReorder f1 f0 (λ _ → _ , there (λ b → there (λ l → here tt)))
-                  (Usolution {A = λ a → μ (≡D a) (a , tt)} (here (w , idp w)) unifyFlip₅) 
+                  (Usolution {B = λ a → μ (≡D a) (a , tt)} (here (w , idp w)) unifyFlip₅) 
 
   Δsplit₃ : Telescope 8 
   Δsplit₃ = t ∈ μ (≡D w) (w , tt) , b ∈ μ (≡D w) (w , tt) , l ∈ μ (≡D w) (w , tt) , r ∈ μ (≡D w) (w , tt) ,
@@ -119,7 +120,7 @@ CTFlip {A} w = node (there (λ x → there (λ y → there (λ z → there (λ t
   
   unifyFlip₃ : Unification Δsplit₃
   unifyFlip₃ = UReorder f1 f0 (λ _ → _ , there (λ t → there (λ b → there (λ l → here tt))))
-                  (Usolution {A = λ a → μ (≡D a) (a , tt)} (here (w , idp w)) unifyFlip₄) 
+                  (Usolution {B = λ a → μ (≡D a) (a , tt)} (here (w , idp w)) unifyFlip₄) 
 
   Δsplit₂ : Telescope 10 
   Δsplit₂ = z ∈ A , t ∈ μ (≡D w) (w , tt) , b ∈ μ (≡D w) (z , tt) , l ∈ μ (≡D w) (w , tt) , r ∈ μ (≡D w) (z , tt) ,
@@ -127,7 +128,7 @@ CTFlip {A} w = node (there (λ x → there (λ y → there (λ z → there (λ t
   
   unifyFlip₂ : Unification Δsplit₂
   unifyFlip₂ = UReorder f1 f0 (λ _ → _ , there (λ z → there (λ t → there (λ b → there (λ l → here tt))))) 
-                  (Usolution {X = ⊤} {A = λ a → A} (here (tt , w)) unifyFlip₃) 
+                  (Usolution {A = ⊤} {B = λ a → A} (here (tt , w)) unifyFlip₃) 
 
   Δsplit₁ : Telescope 12 
   Δsplit₁ = y ∈ A , z ∈ A , t ∈ μ (≡D w) (w , tt) , b ∈ μ (≡D y) (z , tt) , l ∈ μ (≡D w) (y , tt) , r ∈ μ (≡D w) (z , tt) ,
@@ -135,7 +136,7 @@ CTFlip {A} w = node (there (λ x → there (λ y → there (λ z → there (λ t
   
   unifyFlip₁ : Unification Δsplit₁
   unifyFlip₁ = UReorder f1 f0 (λ _ → _ , there (λ y → there (λ z → there (λ t → there (λ b → there (λ l → here tt)))))) 
-                  (Usolution {X = ⊤} {A = λ a → A} (here (tt , w)) unifyFlip₂) 
+                  (Usolution {A = ⊤} {B = λ a → A} (here (tt , w)) unifyFlip₂) 
 
   Δsplit : Telescope 14 
   Δsplit = x ∈ A , y ∈ A , z ∈ A , t ∈ μ (≡D w) (x , tt) , b ∈ μ (≡D y) (z , tt) , l ∈ μ (≡D w) (y , tt) , r ∈ μ (≡D x) (z , tt) ,
@@ -143,4 +144,4 @@ CTFlip {A} w = node (there (λ x → there (λ y → there (λ z → there (λ t
 
   unifyFlip : Unification Δsplit
   unifyFlip = UReorder f1 f0 (λ _ → _ , there (λ y → there (λ z → there (λ t → there (λ b → there (λ l → there (λ r → here tt)))))))
-                (Usolution {X = ⊤} {A = λ a → A} (here (tt , w)) unifyFlip₁)
+                (Usolution {A = ⊤} {B = λ a → A} (here (tt , w)) unifyFlip₁)

@@ -1,4 +1,5 @@
 {-# OPTIONS --without-K #-}
+{-# OPTIONS --safe #-}
 
 module lib where 
 
@@ -16,9 +17,11 @@ pattern f4 = fsuc (fsuc (fsuc (fsuc fzero)))
 pattern f5 = fsuc (fsuc (fsuc (fsuc (fsuc fzero))))
 pattern f6 = fsuc (fsuc (fsuc (fsuc (fsuc (fsuc fzero)))))
 
+-- eliminator identity type
 J : ∀ {ℓ ℓ'} {A : Set ℓ} {x : A} (P : (y : A) → x ≡ y → Set ℓ') → (p : P x refl) → {y : A} (e : x ≡ y) → P y e
 J P p refl = p
 
+-- reverse of eliminator identity type
 J' : ∀ {ℓ ℓ'} {A : Set ℓ} {x : A} 
   → (P : (y : A) → x ≡ y → Set ℓ') 
   → {y : A} (e : x ≡ y) 
@@ -30,38 +33,46 @@ J' {x = x} P {y = y} e p
       (J (λ y e → (y , e) ≡ (x , refl)) refl e) 
       p 
 
+-- proof section-retraction pair identity type
 J'∘J : ∀ {ℓ ℓ'} {A : Set ℓ} {x : A} (P : (y : A) → x ≡ y → Set ℓ') → (p : P x refl) → {y : A} (e : x ≡ y) 
         → J' P e (J P p e) ≡ p 
 J'∘J {x = x} P p e = J (λ y e → J' P e (J P p e) ≡ p) refl e
 
 
+-- sym identity type
 J₁ : ∀ {ℓ ℓ'} {A : Set ℓ} {x : A} (P : (y : A) → y ≡ x → Set ℓ') → (p : P x refl) → {y : A} (e : y ≡ x) → P y e
 J₁ {x = x} P p {y} e = J (λ e p → P y e) (J (λ y e → P y (sym e)) p (sym e)) (J (λ x e → sym (sym e) ≡ e) refl e) 
 
+-- reverse of sym identity type
 J₁' : ∀ {ℓ ℓ'} {A : Set ℓ} {x : A} (P : (y : A) → y ≡ x → Set ℓ')
             → {y : A} (e : y ≡ x) → (p : P y e) → P x refl
 J₁' {x = x} P {y = y} e p = subst (λ xe → P (proj₁ xe) (proj₂ xe)) (J₁ (λ y e → (y , e) ≡ (x , refl)) refl e) p 
 
+-- proof of reverse sym identity type
 J₁'∘J₁ : ∀ {ℓ ℓ'} {A : Set ℓ} {x : A} (P : (y : A) → y ≡ x → Set ℓ') 
             → (p : P x refl) → {y : A} (e : y ≡ x) 
         → J₁' P e (J₁ P p e) ≡ p 
 J₁'∘J₁ {x = x} P p {y} e = J₁ (λ y e → J₁' P e (J₁ P p e) ≡ p) refl e    
 
-Π-create : ∀ {ℓ ℓ'} {A : Set ℓ} {B : Set ℓ'} {a₁ a₂ : A} {b₁ b₂ : B} (ea : a₁ ≡ a₂) 
+
+-- create equivalence between two product types
+×-create : ∀ {ℓ ℓ'} {A : Set ℓ} {B : Set ℓ'} {a₁ a₂ : A} {b₁ b₂ : B} (ea : a₁ ≡ a₂) 
                 (eds : b₁ ≡ b₂) → (a₁ , b₁) ≡ (a₂ , b₂)
-Π-create {B = B} {a₁} {a₂} {b₁} ea eb = subst (λ b₂ → (a₁ , b₁) ≡ (a₂ , b₂)) eb 
+×-create {B = B} {a₁} {a₂} {b₁} ea eb = subst (λ b₂ → (a₁ , b₁) ≡ (a₂ , b₂)) eb 
         (subst (λ a₂ → (a₁ , b₁) ≡ (a₂ , b₁)) ea refl)
 
-projΠ₁ : ∀ {ℓ ℓ'} {A : Set ℓ} {B : Set ℓ'} {a₁ a₂ : A} {b₁ b₂ : B} (e : (a₁ , b₁) ≡ (a₂ , b₂)) → a₁ ≡ a₂ 
-projΠ₁ e = cong proj₁ e
+proj×₁ : ∀ {ℓ ℓ'} {A : Set ℓ} {B : Set ℓ'} {a₁ a₂ : A} {b₁ b₂ : B} (e : (a₁ , b₁) ≡ (a₂ , b₂)) → a₁ ≡ a₂ 
+proj×₁ e = cong proj₁ e
 
-projΠ₂ : ∀ {ℓ ℓ'} {A : Set ℓ} {B : Set ℓ'} {a₁ a₂ : A} {b₁ b₂ : B} (e : (a₁ , b₁) ≡ (a₂ , b₂)) → b₁ ≡ b₂ 
-projΠ₂ e = cong proj₂ e
+proj×₂ : ∀ {ℓ ℓ'} {A : Set ℓ} {B : Set ℓ'} {a₁ a₂ : A} {b₁ b₂ : B} (e : (a₁ , b₁) ≡ (a₂ , b₂)) → b₁ ≡ b₂ 
+proj×₂ e = cong proj₂ e
 
-create∘projΠ : ∀ {ℓ ℓ'} {A : Set ℓ} {B : Set ℓ'} {a₁ a₂ : A} {b₁ b₂ : B} (e : (a₁ , b₁) ≡ (a₂ , b₂)) 
-    → Π-create (projΠ₁ e) (projΠ₂ e) ≡ e 
-create∘projΠ e = J (λ x e → Π-create (projΠ₁ e) (projΠ₂ e) ≡ e) refl e 
+create∘proj× : ∀ {ℓ ℓ'} {A : Set ℓ} {B : Set ℓ'} {a₁ a₂ : A} {b₁ b₂ : B} (e : (a₁ , b₁) ≡ (a₂ , b₂)) 
+    → ×-create (proj×₁ e) (proj×₂ e) ≡ e 
+create∘proj× e = J (λ x e → ×-create (proj×₁ e) (proj×₂ e) ≡ e) refl e 
 
+
+-- create equivalence between two dependent sym types
 Σ-create : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'} {a₁ a₂ : A} {b₁ : B a₁} {b₂ : B a₂} (ea : a₁ ≡ a₂) 
                 (eds : subst B ea b₁ ≡ b₂) → (a₁ , b₁) ≡ (a₂ , b₂)
 Σ-create {B = B} {a₁} {a₂} {b₁} {b₂} ea eb = subst (λ b₂ → (a₁ , b₁) ≡ (a₂ , b₂)) eb 
@@ -90,100 +101,54 @@ isLinvΣ₂ : ∀ {ℓ ℓ'} {A : Set ℓ} {B : A → Set ℓ'} {a₁ a₂ : A} 
 isLinvΣ₂ {A = A} {B = B} {a₁} {a₂} {b₁} {b₂} ea eb = J (λ b₂ eb → subst (λ ea → subst B ea b₁ ≡ b₂) (isLinvΣ₁ ea eb) (linvΣ₂ (Σ-create ea eb)) ≡ eb) 
                     (J (λ a₂ ea → subst (λ ea₁ → subst B ea₁ b₁ ≡ subst B ea b₁) (isLinvΣ₁ ea refl) (linvΣ₂ (Σ-create ea refl)) ≡ refl) refl ea) eb 
 
-applyΣ : ∀ {ℓ ℓ' ℓ''} {A : Set ℓ} {B : A → Set ℓ'} {a₁ a₂ : A} {b₁ : B a₁} {b₂ : B a₂} 
-          (ea : a₁ ≡ a₂) (eb : subst B ea b₁ ≡ b₂) (P : (ea : a₁ ≡ a₂) (eb : subst B ea b₁ ≡ b₂) → Set ℓ'')
-          → P ea eb → P (linvΣ₁ (Σ-create ea eb)) (linvΣ₂ (Σ-create ea eb))
-applyΣ {A = A} {B = B} {a₁} {a₂} {b₁} {b₂} ea eb P p 
-  = subst (λ e → P (proj₁ e) (proj₂ e)) (sym (Σ-create (isLinvΣ₁ ea eb) (isLinvΣ₂ ea eb))) p
 
-applyΣ' : ∀ {ℓ ℓ' ℓ''} {A : Set ℓ} {B : A → Set ℓ'} {a₁ a₂ : A} {b₁ : B a₁} {b₂ : B a₂} 
-          (ea : a₁ ≡ a₂) (eb : subst B ea b₁ ≡ b₂) (P : (ea : a₁ ≡ a₂) (eb : subst B ea b₁ ≡ b₂) → Set ℓ'')
-          → P (linvΣ₁ (Σ-create ea eb)) (linvΣ₂ (Σ-create ea eb)) → P ea eb
-applyΣ' {A = A} {B = B} {a₁} {a₂} {b₁} {b₂} ea eb P p 
-  = subst (λ e → P (proj₁ e) (proj₂ e)) (Σ-create (isLinvΣ₁ ea eb) (isLinvΣ₂ ea eb)) p
-
-
-proofΣ : ∀ {ℓ ℓ' ℓ''} {A : Set ℓ} {B : A → Set ℓ'} {a₁ a₂ : A} {b₁ : B a₁} {b₂ : B a₂} 
-          → (ea : a₁ ≡ a₂) (eb : subst B ea b₁ ≡ b₂)
-          → {C : (ea : a₁ ≡ a₂) → (subst B ea b₁ ≡ b₂) → Set ℓ''}
-          → (c : C ea eb) 
-          → (linvΣ₁ (subst (λ b₂ → (a₁ , b₁) ≡ (a₂ , b₂)) eb
-              (J (λ a₂ ea → (a₁ , b₁) ≡ (a₂ , subst B ea b₁))
-                refl ea)) , 
-             linvΣ₂ (subst (λ b₂ → (a₁ , b₁) ≡ (a₂ , b₂)) eb
-              (J (λ a₂ ea → (a₁ , b₁) ≡ (a₂ , subst B ea b₁))
-                (refl {x = a₁ , b₁}) ea)) , 
-             subst (λ e → C (linvΣ₁ e) (linvΣ₂ e)) (refl {x = Σ-create ea eb}) 
-                (applyΣ {B = B} ea eb C c)) 
-             ≡ (_,_ {B = λ ea → Σ[ eb ∈ subst B ea b₁ ≡ b₂ ] (C ea eb)} ea (_,_ {B = C ea} eb c) )
-proofΣ {ℓ} {ℓ'} {ℓ''} {A = A} {B = B} {a₁} {a₂} {b₁} {b₂} ea eb {C = C} c = J {x = a₁}
-            (λ a₂ ea → (b₂ : B a₂) → (eb : subst B ea b₁ ≡ b₂) → (C : (ea : a₁ ≡ a₂) → (subst B ea b₁ ≡ b₂) → Set ℓ'') → (c : C ea eb) 
-              → (linvΣ₁ (subst (λ b₂ → (a₁ , b₁) ≡ (a₂ , b₂)) eb
-              (J (λ a₂ ea → (a₁ , b₁) ≡ (a₂ , subst B ea b₁))
-                refl ea)) , 
-             linvΣ₂ (subst (λ b₂ → (a₁ , b₁) ≡ (a₂ , b₂)) eb
-              (J (λ a₂ ea → (a₁ , b₁) ≡ (a₂ , subst B ea b₁))
-                (refl {x = a₁ , b₁}) ea)) , 
-             subst (λ e → C (linvΣ₁ e) (linvΣ₂ e)) (refl {x = Σ-create ea eb}) 
-                (applyΣ {B = B} ea eb C c)) 
-             ≡ (_,_ {B = λ ea → Σ[ eb ∈ subst B ea b₁ ≡ b₂ ] (C ea eb)} ea (_,_ {B = C ea} eb c)))
-      (λ b₂ eb C c →
-          J (λ b₂ eb → (C : (ea : a₁ ≡ a₁) → subst B ea b₁ ≡ b₂ → Set ℓ'') → (c : C refl eb)  
-              → (linvΣ₁ (subst (λ b₄ → (a₁ , b₁) ≡ (a₁ , b₄)) eb refl) ,
-                  linvΣ₂ (subst (λ b₄ → (a₁ , b₁) ≡ (a₁ , b₄)) eb refl) ,
-                  applyΣ {B = B} refl eb C c)
-                  ≡ (_,_ {B = λ ea → Σ[ eb ∈ subst B ea b₁ ≡ b₂ ] (C ea eb)} refl (_,_ {B = C refl} eb c)))
-            (λ C₂ c₂ → refl)
-      eb C c) ea b₂ eb C c
-
-
-ΣΠ-create : ∀ {ℓ ℓ'} {A B : Set ℓ} {C : A → Set ℓ'}
+-- create equivalence between a dependent sum and product type
+Σ×-create : ∀ {ℓ ℓ'} {A B : Set ℓ} {C : A → Set ℓ'}
   → {a₁ a₂ : A} (ea : a₁ ≡ a₂)  
   → {b₁ b₂ : B} (eb : b₁ ≡ b₂)
   → {c₁ : C a₁} {c₂ : C a₂} (ec : subst C ea c₁ ≡ c₂)
   → (a₁ , b₁ , c₁) ≡ (a₂ , b₂ , c₂)
-ΣΠ-create {A = A} {B} {C} {a₁} {a₂} ea {b₁} {b₂} eb {c₁} {c₂} ec 
+Σ×-create {A = A} {B} {C} {a₁} {a₂} ea {b₁} {b₂} eb {c₁} {c₂} ec 
   = subst (λ c₂ → (a₁ , b₁ , c₁) ≡ (a₂ , b₂ , c₂)) ec 
     (J (λ b₂ eb → (a₁ , b₁ , c₁) ≡ (a₂ , b₂ , subst C ea c₁)) 
       (J (λ a₂ ea → (a₁ , b₁ , c₁) ≡ (a₂ , b₁ , subst C ea c₁)) refl ea) eb)
 
-linvΣΠ₁ : ∀ {ℓ ℓ'} {A B : Set ℓ} {C : A → Set ℓ'}
+linvΣ×₁ : ∀ {ℓ ℓ'} {A B : Set ℓ} {C : A → Set ℓ'}
   → {a₁ a₂ : A} {b₁ b₂ : B} {c₁ : C a₁} {c₂ : C a₂}
   → (a₁ , b₁ , c₁) ≡ (a₂ , b₂ , c₂)
   → a₁ ≡ a₂
-linvΣΠ₁ {A = A} {B} {C} {a₁} {a₂} {b₁} {b₂} {c₁} {c₂} e = J (λ x₂ e → a₁ ≡ proj₁ x₂) refl e
+linvΣ×₁ {A = A} {B} {C} {a₁} {a₂} {b₁} {b₂} {c₁} {c₂} e = J (λ x₂ e → a₁ ≡ proj₁ x₂) refl e
 
-linvΣΠ₂ : ∀ {ℓ ℓ'} {A B : Set ℓ} {C : A → Set ℓ'}
+linvΣ×₂ : ∀ {ℓ ℓ'} {A B : Set ℓ} {C : A → Set ℓ'}
   → {a₁ a₂ : A} {b₁ b₂ : B} {c₁ : C a₁} {c₂ : C a₂}
   → (a₁ , b₁ , c₁) ≡ (a₂ , b₂ , c₂)
   → b₁ ≡ b₂
-linvΣΠ₂ {A = A} {B} {C} {a₁} {a₂} {b₁} {b₂} {c₁} {c₂} e = J (λ x₂ e → b₁ ≡ proj₁ (proj₂ x₂)) refl e
+linvΣ×₂ {A = A} {B} {C} {a₁} {a₂} {b₁} {b₂} {c₁} {c₂} e = J (λ x₂ e → b₁ ≡ proj₁ (proj₂ x₂)) refl e
 
-linvΣΠ₃ : ∀ {ℓ ℓ'} {A B : Set ℓ} {C : A → Set ℓ'}
+linvΣ×₃ : ∀ {ℓ ℓ'} {A B : Set ℓ} {C : A → Set ℓ'}
   → {a₁ a₂ : A} {b₁ b₂ : B} {c₁ : C a₁} {c₂ : C a₂}
   → (e : (a₁ , b₁ , c₁) ≡ (a₂ , b₂ , c₂))
-  → subst C (linvΣΠ₁ e) c₁ ≡ c₂
-linvΣΠ₃ {A = A} {B} {C} {a₁} {a₂} {b₁} {b₂} {c₁} {c₂} e = J (λ x₂ e → subst C (linvΣΠ₁ e) c₁ ≡ proj₂ (proj₂ x₂)) refl e
+  → subst C (linvΣ×₁ e) c₁ ≡ c₂
+linvΣ×₃ {A = A} {B} {C} {a₁} {a₂} {b₁} {b₂} {c₁} {c₂} e = J (λ x₂ e → subst C (linvΣ×₁ e) c₁ ≡ proj₂ (proj₂ x₂)) refl e
 
-isLinvΣΠ : ∀ {ℓ ℓ'} {A B : Set ℓ} {C : A → Set ℓ'}
+isLinvΣ× : ∀ {ℓ ℓ'} {A B : Set ℓ} {C : A → Set ℓ'}
   → {a₁ a₂ : A} {b₁ b₂ : B} {c₁ : C a₁} {c₂ : C a₂}
   → (e : (a₁ , b₁ , c₁) ≡ (a₂ , b₂ , c₂))
-  → ΣΠ-create (linvΣΠ₁ e) (linvΣΠ₂ e) (linvΣΠ₃ e) ≡ e
-isLinvΣΠ {A = A} {B} {C} {a₁} {a₂} {b₁} {b₂} {c₁} {c₂} e = J (λ x e → ΣΠ-create (linvΣΠ₁ e) (linvΣΠ₂ e) (linvΣΠ₃ e) ≡ e) refl e
+  → Σ×-create (linvΣ×₁ e) (linvΣ×₂ e) (linvΣ×₃ e) ≡ e
+isLinvΣ× {A = A} {B} {C} {a₁} {a₂} {b₁} {b₂} {c₁} {c₂} e = J (λ x e → Σ×-create (linvΣ×₁ e) (linvΣ×₂ e) (linvΣ×₃ e) ≡ e) refl e
 
 
 
-
-
+-- create equivalence between two dependent sum types
 ΣΣ-create : ∀ {ℓ ℓ'} {A B : Set ℓ} {C : A → B → Set ℓ'}
   → {a₁ a₂ : A} (ea : a₁ ≡ a₂)  
   → {b₁ b₂ : B} (eb : b₁ ≡ b₂)
-  → {c₁ : C a₁ b₁} {c₂ : C a₂ b₂} (ec : subst (λ ab → C (proj₁ ab) (proj₂ ab)) (Π-create ea eb) c₁ ≡ c₂)
+  → {c₁ : C a₁ b₁} {c₂ : C a₂ b₂} (ec : subst (λ ab → C (proj₁ ab) (proj₂ ab)) (×-create ea eb) c₁ ≡ c₂)
   → (a₁ , b₁ , c₁) ≡ (a₂ , b₂ , c₂)
 ΣΣ-create {A = A} {B} {C} {a₁} {a₂} ea {b₁} {b₂} eb {c₁} {c₂} ec 
   = subst (λ c₂ → (a₁ , b₁ , c₁) ≡ (a₂ , b₂ , c₂)) ec 
-    (J (λ b₂ eb → (a₁ , b₁ , c₁) ≡ (a₂ , b₂ , subst (λ ab → C (proj₁ ab) (proj₂ ab)) (Π-create ea eb) c₁)) 
-      (J (λ a₂ ea → (a₁ , b₁ , c₁) ≡ (a₂ , b₁ , subst (λ ab → C (proj₁ ab) (proj₂ ab)) (Π-create ea refl) c₁)) refl ea) eb)
+    (J (λ b₂ eb → (a₁ , b₁ , c₁) ≡ (a₂ , b₂ , subst (λ ab → C (proj₁ ab) (proj₂ ab)) (×-create ea eb) c₁)) 
+      (J (λ a₂ ea → (a₁ , b₁ , c₁) ≡ (a₂ , b₁ , subst (λ ab → C (proj₁ ab) (proj₂ ab)) (×-create ea refl) c₁)) refl ea) eb)
 
 linvΣΣ₁ : ∀ {ℓ ℓ'} {A B : Set ℓ} {C : A → B → Set ℓ'}
   → {a₁ a₂ : A} {b₁ b₂ : B} {c₁ : C a₁ b₁} {c₂ : C a₂ b₂}
@@ -200,10 +165,9 @@ linvΣΣ₂ {A = A} {B} {C} {a₁} {a₂} {b₁} {b₂} {c₁} {c₂} e = J (λ 
 linvΣΣ₃ : ∀ {ℓ ℓ'} {A B : Set ℓ} {C : A → B → Set ℓ'}
   → {a₁ a₂ : A} {b₁ b₂ : B} {c₁ : C a₁ b₁} {c₂ : C a₂ b₂}
   → (e : (a₁ , b₁ , c₁) ≡ (a₂ , b₂ , c₂))
-  → subst (λ ab → C (proj₁ ab) (proj₂ ab)) (Π-create (linvΣΣ₁ e) (linvΣΣ₂ e)) c₁ ≡ c₂
-linvΣΣ₃ {A = A} {B} {C} {a₁} {a₂} {b₁} {b₂} {c₁} {c₂} e = J (λ x₂ e → subst (λ ab → C (proj₁ ab) (proj₂ ab)) (Π-create (linvΣΣ₁ e) (linvΣΣ₂ e)) c₁ ≡ proj₂ (proj₂ x₂)) refl e
+  → subst (λ ab → C (proj₁ ab) (proj₂ ab)) (×-create (linvΣΣ₁ e) (linvΣΣ₂ e)) c₁ ≡ c₂
+linvΣΣ₃ {A = A} {B} {C} {a₁} {a₂} {b₁} {b₂} {c₁} {c₂} e = J (λ x₂ e → subst (λ ab → C (proj₁ ab) (proj₂ ab)) (×-create (linvΣΣ₁ e) (linvΣΣ₂ e)) c₁ ≡ proj₂ (proj₂ x₂)) refl e
 
--- linvΣΣ₁₃ :
 
 isLinvΣΣ : ∀ {ℓ ℓ'} {A B : Set ℓ} {C : A → B → Set ℓ'}
   → {a₁ a₂ : A} {b₁ b₂ : B} {c₁ : C a₁ b₁} {c₂ : C a₂ b₂}
@@ -213,16 +177,16 @@ isLinvΣΣ {A = A} {B} {C} {a₁} {a₂} {b₁} {b₂} {c₁} {c₂} e = J (λ x
 
 
 
-
+-- create an equivalence between two dependent sum types with a substitution
 Σ-create' : ∀ {ℓ ℓ'} {A B : Set ℓ} {C : A → B → Set ℓ'}
   → {a₁ a₂ : A} (ea : a₁ ≡ a₂)  
   → {b₁ b₂ : B} (eb : b₁ ≡ b₂)
-  → {c₁ : C a₁ b₁} {c₂ : C a₂ b₂} (ec : subst (λ ab → C (proj₁ ab) (proj₂ ab)) (Π-create ea eb) c₁ ≡ c₂)
+  → {c₁ : C a₁ b₁} {c₂ : C a₂ b₂} (ec : subst (λ ab → C (proj₁ ab) (proj₂ ab)) (×-create ea eb) c₁ ≡ c₂)
   → (a₁ , subst (C a₁) eb c₁) ≡ (a₂ , c₂)
 Σ-create' {A = A} {B} {C} {a₁} {a₂} ea {b₁} {b₂} eb {c₁} {c₂} ec 
   = subst (λ c₂ → (a₁ , subst (C a₁) eb c₁) ≡ (a₂ , c₂)) ec 
-    (J (λ a₂ ea → (a₁ , subst (C a₁) eb c₁) ≡ (a₂ , subst (λ ab → C (proj₁ ab) (proj₂ ab)) (Π-create ea eb) c₁)) 
-      (J (λ b₂ eb → (a₁ , subst (C a₁) eb c₁) ≡ (a₁ , subst (λ ab → C (proj₁ ab) (proj₂ ab)) (Π-create refl eb) c₁)) refl eb) ea) 
+    (J (λ a₂ ea → (a₁ , subst (C a₁) eb c₁) ≡ (a₂ , subst (λ ab → C (proj₁ ab) (proj₂ ab)) (×-create ea eb) c₁)) 
+      (J (λ b₂ eb → (a₁ , subst (C a₁) eb c₁) ≡ (a₁ , subst (λ ab → C (proj₁ ab) (proj₂ ab)) (×-create refl eb) c₁)) refl eb) ea) 
 
 linvΣ₁' : ∀ {ℓ ℓ'} {A B : Set ℓ} {C : A → B → Set ℓ'}
   → {a₁ a₂ : A} {b₁ b₂ : B} (eb : b₁ ≡ b₂) {c₁ : C a₁ b₁} {c₂ : C a₂ b₂} 
@@ -233,10 +197,10 @@ linvΣ₁' eb e = cong proj₁ e
 linvΣ₂' : ∀ {ℓ ℓ'} {A B : Set ℓ} {C : A → B → Set ℓ'}
   → {a₁ a₂ : A} {b₁ b₂ : B} (eb : b₁ ≡ b₂) {c₁ : C a₁ b₁} {c₂ : C a₂ b₂} 
   → (e : (a₁ , subst (C a₁) eb c₁) ≡ (a₂ , c₂))
-  → subst (λ ab → C (proj₁ ab) (proj₂ ab)) (Π-create (linvΣ₁' eb e) eb) c₁ ≡ c₂
+  → subst (λ ab → C (proj₁ ab) (proj₂ ab)) (×-create (linvΣ₁' eb e) eb) c₁ ≡ c₂
 linvΣ₂' {A = A} {B} {C} {a₁} eb {c₁} e = 
-  J (λ x₂ e → subst (λ ab → C (proj₁ ab) (proj₂ ab)) (Π-create (linvΣ₁' eb e) eb) c₁ ≡ proj₂ x₂) 
-    (J (λ b₂ eb → subst (λ ab → C (proj₁ ab) (proj₂ ab)) (Π-create (linvΣ₁' {C = C} eb {c₁ = c₁} refl) eb) c₁ ≡ subst (λ v → C a₁ v) eb c₁) 
+  J (λ x₂ e → subst (λ ab → C (proj₁ ab) (proj₂ ab)) (×-create (linvΣ₁' eb e) eb) c₁ ≡ proj₂ x₂) 
+    (J (λ b₂ eb → subst (λ ab → C (proj₁ ab) (proj₂ ab)) (×-create (linvΣ₁' {C = C} eb {c₁ = c₁} refl) eb) c₁ ≡ subst (λ v → C a₁ v) eb c₁) 
       refl eb) e 
 
 isLinvΣ' : ∀ {ℓ ℓ'} {A B : Set ℓ} {C : A → B → Set ℓ'}
@@ -246,7 +210,8 @@ isLinvΣ' : ∀ {ℓ ℓ'} {A B : Set ℓ} {C : A → B → Set ℓ'}
 isLinvΣ' {C = C} eb {c₁} e = J (λ x e → Σ-create' (linvΣ₁' eb e) eb (linvΣ₂' eb e) ≡ e) 
                 (J (λ b eb → Σ-create' (linvΣ₁' {C = C} eb {c₁ = c₁} refl) eb (linvΣ₂' eb refl) ≡ refl) refl eb) e  
 
-                
+
+-- add cong to substitution                
 subst→cong : ∀ {ℓ ℓ' ℓ''} {A : Set ℓ} {B : Set ℓ'} (f : A → B) (P : B → Set ℓ'')
   {s t : A} (e : s ≡ t) (u : P (f s)) (v : P (f t))
   → subst (λ s → P (f s)) e u ≡ v 
@@ -254,6 +219,7 @@ subst→cong : ∀ {ℓ ℓ' ℓ''} {A : Set ℓ} {B : Set ℓ'} (f : A → B) (
 subst→cong f P {s} {t} e u = J (λ t e → (v : P (f t)) → subst (λ s → P (f s)) e u ≡ v → subst P (cong f e) u ≡ v) 
   (λ v e → e) e 
 
+-- remove cong from substitution
 cong→subst : ∀ {ℓ ℓ' ℓ''} {A : Set ℓ} {B : Set ℓ'} (f : A → B) (P : B → Set ℓ'')
   {s t : A} (e : s ≡ t) (u : P (f s)) (v : P (f t))
   → subst P (cong f e) u ≡ v
@@ -275,104 +241,106 @@ subst→cong∘cong→subst : ∀ {ℓ ℓ' ℓ''} {A : Set ℓ} {B : Set ℓ'} 
 subst→cong∘cong→subst {f = f} {P} {s} {t} e u = J (λ t e → (v : P (f t)) → (e' : subst P (cong f e) u ≡ v)
       → subst→cong f P e u v (cong→subst f P e u v e') ≡ e') (λ v e' → refl) e 
 
-coerce : ∀ {ℓ} {X Y : Set ℓ } → (X ≡ Y) → X → Y
-coerce e x = J (λ y p → y) x e
-
-
-Jextra : ∀ {ℓ ℓ'} {A B : Set ℓ} {x : A} (f : A → B) (f' : B → A) (f'∘f : f' (f x) ≡ x)
-  (P : (x' : A) → f' (f x) ≡ x' → Set ℓ') → (p : P (f' (f x)) refl) → P x f'∘f
-Jextra f f' f'∘f P p = J (λ x e → P x e) p f'∘f
-
-Jextra' : ∀ {ℓ ℓ'} {A B : Set ℓ} {x : A} (f : A → B) (f' : B → A) (f'∘f : f' (f x) ≡ x)
-  (P : (x' : A) → f' (f x) ≡ x' → Set ℓ') → (p : P x f'∘f) → P (f' (f x)) refl
-Jextra' f f' f'∘f P p = J' (λ x e → P x e) f'∘f p
-
+-- substituting applying f and f' on both sides of an equivalence relation and substituting with f'∘f on both sides 
+-- results in the original equivalence relation
 subst∘subst : ∀ {ℓ} {A B : Set ℓ} {x y : A} → (e : x ≡ y) 
   (f : A → B) (f' : B → A) (f'∘f : (a : A) → f' (f a) ≡ a)
   → subst (λ e → e ≡ y) (f'∘f x) (subst (λ e → f' (f x) ≡ e) (f'∘f y) (cong f' (cong f e))) ≡ e
-subst∘subst {x = x} refl f f' f'∘f = Jextra f f' (f'∘f x) (λ x' e' → subst (λ e → e ≡ x') e'
-      (subst (_≡_ (f' (f x))) e' refl) ≡ refl) refl
+subst∘subst {x = x} refl f f' f'∘f = J (λ x' e' → subst (λ e → e ≡ x') e' (subst (_≡_ (f' (f x))) e' refl) ≡ refl) refl (f'∘f x) 
+
 
 data Square {ℓ} {A : Set ℓ} {a : A} : {b c d : A} (p : a ≡ b) (q : c ≡ d) (r : a ≡ c) (s : b ≡ d) → Set ℓ where
   idS : Square {a = a} refl refl refl refl
 
+-- flip the order of a square
 flipS : ∀ {ℓ} {A : Set ℓ} {w x y z : A} (t : w ≡ x) (b : y ≡ z) (l : w ≡ y) (r : x ≡ z) 
         → Square t b l r → Square l r t b
 flipS refl refl refl refl idS = idS
 
+-- create a square from a substitution relation
 createSquare : ∀ {ℓ} {A : Set ℓ} {w x y z : A} (t : w ≡ x) (b : y ≡ z) (l : w ≡ y) (r : x ≡ z) 
-  (p : subst (λ wy → proj₁ wy ≡ proj₂ wy) (Π-create t b) l ≡ r) → Square t b l r 
+  (p : subst (λ wy → proj₁ wy ≡ proj₂ wy) (×-create t b) l ≡ r) → Square t b l r 
 createSquare refl refl refl r refl = idS 
 
+-- create substitution relation from a square
 createSquare' : ∀ {ℓ} {A : Set ℓ} {w x y z : A} (t : w ≡ x) (b : y ≡ z) (l : w ≡ y) (r : x ≡ z) 
-  → Square t b l r → subst (λ wy → proj₁ wy ≡ proj₂ wy) (Π-create t b) l ≡ r
+  → Square t b l r → subst (λ wy → proj₁ wy ≡ proj₂ wy) (×-create t b) l ≡ r
 createSquare' refl refl refl r idS = refl
 
+-- flip a substitution
 flipSquare : ∀ {ℓ} {A : Set ℓ} {w x y z : A} (t : w ≡ x) (b : y ≡ z) (l : w ≡ y) (r : x ≡ z) 
-  → (p : subst (λ wy → proj₁ wy ≡ proj₂ wy) (Π-create t b) l ≡ r) 
-  → subst (λ wy → proj₁ wy ≡ proj₂ wy) (Π-create l r) t ≡ b
+  → (p : subst (λ wy → proj₁ wy ≡ proj₂ wy) (×-create t b) l ≡ r) 
+  → subst (λ wy → proj₁ wy ≡ proj₂ wy) (×-create l r) t ≡ b
 flipSquare t b l r p = createSquare' l r t b (flipS t b l r (createSquare t b l r p)) 
 
+-- flipping a substitution twice results in the original substitution
 flipSquare∘flipSquare : ∀ {ℓ} {A : Set ℓ} {w x y z : A} (t : w ≡ x) (b : y ≡ z) (l : w ≡ y) (r : x ≡ z) 
-  → (p : subst (λ wy → proj₁ wy ≡ proj₂ wy) (Π-create t b) l ≡ r) 
+  → (p : subst (λ wy → proj₁ wy ≡ proj₂ wy) (×-create t b) l ≡ r) 
   → flipSquare l r t b (flipSquare t b l r p) ≡ p
 flipSquare∘flipSquare refl refl refl r refl = refl 
 
-Π-create→cong : ∀ {ℓ ℓ'} {A : Set ℓ} {X Y : Set ℓ'} {a b : X → Y} {f' : A → X}
+-- substituting the left- and right-hand side of r with a dependent sum type containing 
+-- equivalence relations a (f' u) ≡ a (f' v) and b (f' u) ≡ b (f' v)
+-- results in substituting (f' u) in the left- and right-hand side of r
+×-create→cong : ∀ {ℓ ℓ'} {A : Set ℓ} {X Y : Set ℓ'} {a b : X → Y} {f' : A → X}
   {u v : A}(e : u ≡ v) (r : a (f' u) ≡ b (f' u)) (s : a (f' v) ≡ b (f' v)) 
-  → subst (λ ab → proj₁ ab ≡ proj₂ ab) (Π-create (cong (λ xs₁ → a (f' xs₁)) e) 
+  → subst (λ ab → proj₁ ab ≡ proj₂ ab) (×-create (cong (λ xs₁ → a (f' xs₁)) e) 
       (cong (λ xs₁ → b (f' xs₁)) e)) r ≡ s
   → subst (λ x → a x ≡ b x) (cong f' e) r ≡ s 
-Π-create→cong {a = a} {b} {f'} e r = J (λ v e → (s : a (f' v) ≡ b (f' v)) 
-    → subst (λ ab → proj₁ ab ≡ proj₂ ab) (Π-create (cong (λ xs₁ → a (f' xs₁)) e) 
+×-create→cong {a = a} {b} {f'} e r = J (λ v e → (s : a (f' v) ≡ b (f' v)) 
+    → subst (λ ab → proj₁ ab ≡ proj₂ ab) (×-create (cong (λ xs₁ → a (f' xs₁)) e) 
         (cong (λ xs₁ → b (f' xs₁)) e)) r ≡ s → subst (λ x → a x ≡ b x) (cong f' e) r ≡ s) 
       (λ s e → e) e
 
-Π-cong→create : ∀ {ℓ ℓ'} {A : Set ℓ} {X Y : Set ℓ'} {a b : X → Y} {f' : A → X}
+-- substituting (f' u) in the left- and right-hand side of r results in
+-- substituting the left- and right-hand side of r with a dependent sum type containing 
+-- equivalence relations a (f' u) ≡ a (f' v) and b (f' u) ≡ b (f' v)
+×-cong→create : ∀ {ℓ ℓ'} {A : Set ℓ} {X Y : Set ℓ'} {a b : X → Y} {f' : A → X}
   {u v : A}(e : u ≡ v) (r : a (f' u) ≡ b (f' u)) (s : a (f' v) ≡ b (f' v)) 
   → subst (λ x → a x ≡ b x) (cong f' e) r ≡ s 
-  → subst (λ ab → proj₁ ab ≡ proj₂ ab) (Π-create (cong (λ xs₁ → a (f' xs₁)) e) 
+  → subst (λ ab → proj₁ ab ≡ proj₂ ab) (×-create (cong (λ xs₁ → a (f' xs₁)) e) 
       (cong (λ xs₁ → b (f' xs₁)) e)) r ≡ s
-Π-cong→create {a = a} {b} {f'} e r = J (λ v e → (s : a (f' v) ≡ b (f' v)) 
+×-cong→create {a = a} {b} {f'} e r = J (λ v e → (s : a (f' v) ≡ b (f' v)) 
     → subst (λ x → a x ≡ b x) (cong f' e) r ≡ s  
-    → subst (λ ab → proj₁ ab ≡ proj₂ ab) (Π-create (cong (λ xs₁ → a (f' xs₁)) e) 
+    → subst (λ ab → proj₁ ab ≡ proj₂ ab) (×-create (cong (λ xs₁ → a (f' xs₁)) e) 
       (cong (λ xs₁ → b (f' xs₁)) e)) r ≡ s) 
       (λ s e → e) e
 
-Π-cong→create∘Π-create→cong : ∀ {ℓ ℓ'} {A : Set ℓ} {X Y : Set ℓ'} {a b : X → Y} {f' : A → X}
+×-cong→create∘×-create→cong : ∀ {ℓ ℓ'} {A : Set ℓ} {X Y : Set ℓ'} {a b : X → Y} {f' : A → X}
   {u v : A}(e : u ≡ v) (r : a (f' u) ≡ b (f' u)) (s : a (f' v) ≡ b (f' v)) 
-  → (xs : subst (λ ab → proj₁ ab ≡ proj₂ ab) (Π-create (cong (λ xs₁ → a (f' xs₁)) e) 
+  → (xs : subst (λ ab → proj₁ ab ≡ proj₂ ab) (×-create (cong (λ xs₁ → a (f' xs₁)) e) 
       (cong (λ xs₁ → b (f' xs₁)) e)) r ≡ s) 
-  → Π-cong→create {a = a} {b} {f'} e r s (Π-create→cong {a = a} {b} {f'} e r s xs) ≡ xs
-Π-cong→create∘Π-create→cong {a = a} {b} {f'} e r = J (λ v e → (s : a (f' v) ≡ b (f' v)) 
-    → (xs : subst (λ ab → proj₁ ab ≡ proj₂ ab) (Π-create (cong (λ xs₁ → a (f' xs₁)) e) 
+  → ×-cong→create {a = a} {b} {f'} e r s (×-create→cong {a = a} {b} {f'} e r s xs) ≡ xs
+×-cong→create∘×-create→cong {a = a} {b} {f'} e r = J (λ v e → (s : a (f' v) ≡ b (f' v)) 
+    → (xs : subst (λ ab → proj₁ ab ≡ proj₂ ab) (×-create (cong (λ xs₁ → a (f' xs₁)) e) 
         (cong (λ xs₁ → b (f' xs₁)) e)) r ≡ s) 
-    → Π-cong→create {a = a} {b} {f'} e r s (Π-create→cong {a = a} {b} {f'} e r s xs) ≡ xs) 
+    → ×-cong→create {a = a} {b} {f'} e r s (×-create→cong {a = a} {b} {f'} e r s xs) ≡ xs) 
       (λ s e → refl) e
 
 
-
+-- applying cong twice with g and f results into applying cong once on g∘f
 cong∘cong→cong : ∀ {ℓ ℓ'} {A : Set ℓ} {X Y : Set ℓ'} {a b : X → Y} {f' : A → X}
   {u v : A}(e : u ≡ v) (r : a (f' u) ≡ b (f' u)) (s : a (f' v) ≡ b (f' v)) 
-  → subst (λ ab → proj₁ ab ≡ proj₂ ab) (Π-create r s) (cong a (cong f' e)) ≡ cong b (cong f' e)
-  → subst (λ ab → proj₁ ab ≡ proj₂ ab) (Π-create r s) (cong (λ xs → a (f' xs)) e) ≡ cong (λ xs → b (f' xs)) e
-cong∘cong→cong {a = a} {b} {f'} {u} {v} e r s e' = J (λ v e → (s : a (f' v) ≡ b (f' v)) → subst (λ ab → proj₁ ab ≡ proj₂ ab) (Π-create r s) (cong a (cong f' e)) ≡ cong b (cong f' e)
-  → subst (λ ab → proj₁ ab ≡ proj₂ ab) (Π-create r s) (cong (λ xs → a (f' xs)) e) ≡ cong (λ xs → b (f' xs)) e) 
+  → subst (λ ab → proj₁ ab ≡ proj₂ ab) (×-create r s) (cong a (cong f' e)) ≡ cong b (cong f' e)
+  → subst (λ ab → proj₁ ab ≡ proj₂ ab) (×-create r s) (cong (λ xs → a (f' xs)) e) ≡ cong (λ xs → b (f' xs)) e
+cong∘cong→cong {a = a} {b} {f'} {u} {v} e r s e' = J (λ v e → (s : a (f' v) ≡ b (f' v)) → subst (λ ab → proj₁ ab ≡ proj₂ ab) (×-create r s) (cong a (cong f' e)) ≡ cong b (cong f' e)
+  → subst (λ ab → proj₁ ab ≡ proj₂ ab) (×-create r s) (cong (λ xs → a (f' xs)) e) ≡ cong (λ xs → b (f' xs)) e) 
     (λ s₁ x → x) e s e'
 
+-- applying cong once on g∘ f, results into applying cong twice with g and f
 cong→cong∘cong : ∀ {ℓ ℓ'} {A : Set ℓ} {X Y : Set ℓ'} {a b : X → Y} {f' : A → X}
   {u v : A}(e : u ≡ v) (r : a (f' u) ≡ b (f' u)) (s : a (f' v) ≡ b (f' v)) 
-  → subst (λ ab → proj₁ ab ≡ proj₂ ab) (Π-create r s) (cong (λ xs → a (f' xs)) e) ≡ cong (λ xs → b (f' xs)) e
-  → subst (λ ab → proj₁ ab ≡ proj₂ ab) (Π-create r s) (cong a (cong f' e)) ≡ cong b (cong f' e)
+  → subst (λ ab → proj₁ ab ≡ proj₂ ab) (×-create r s) (cong (λ xs → a (f' xs)) e) ≡ cong (λ xs → b (f' xs)) e
+  → subst (λ ab → proj₁ ab ≡ proj₂ ab) (×-create r s) (cong a (cong f' e)) ≡ cong b (cong f' e)
 cong→cong∘cong {a = a} {b} {f'} {u} {v} e r s e' = J (λ v e → (s : a (f' v) ≡ b (f' v))
-  → subst (λ ab → proj₁ ab ≡ proj₂ ab) (Π-create r s) (cong (λ xs → a (f' xs)) e) ≡ cong (λ xs → b (f' xs)) e
-  → subst (λ ab → proj₁ ab ≡ proj₂ ab) (Π-create r s) (cong a (cong f' e)) ≡ cong b (cong f' e)) 
+  → subst (λ ab → proj₁ ab ≡ proj₂ ab) (×-create r s) (cong (λ xs → a (f' xs)) e) ≡ cong (λ xs → b (f' xs)) e
+  → subst (λ ab → proj₁ ab ≡ proj₂ ab) (×-create r s) (cong a (cong f' e)) ≡ cong b (cong f' e)) 
     (λ s₁ x → x) e s e'
 
 cong→cong∘cong∘cong∘cong→cong : ∀ {ℓ ℓ'} {A : Set ℓ} {X Y : Set ℓ'} {a b : X → Y} {f' : A → X}
   {u v : A}(e : u ≡ v) (r : a (f' u) ≡ b (f' u)) (s : a (f' v) ≡ b (f' v)) 
-  → (e' : subst (λ ab → proj₁ ab ≡ proj₂ ab) (Π-create r s) (cong a (cong f' e)) ≡ cong b (cong f' e))
+  → (e' : subst (λ ab → proj₁ ab ≡ proj₂ ab) (×-create r s) (cong a (cong f' e)) ≡ cong b (cong f' e))
   → cong→cong∘cong e r s (cong∘cong→cong e r s e') ≡ e'
-cong→cong∘cong∘cong∘cong→cong {a = a} {b} {f'} {u} {v} e r s e' = J (λ v e → (s : a (f' v) ≡ b (f' v)) → (e' : subst (λ ab → proj₁ ab ≡ proj₂ ab) (Π-create r s) (cong a (cong f' e)) ≡ cong b (cong f' e))
+cong→cong∘cong∘cong∘cong→cong {a = a} {b} {f'} {u} {v} e r s e' = J (λ v e → (s : a (f' v) ≡ b (f' v)) → (e' : subst (λ ab → proj₁ ab ≡ proj₂ ab) (×-create r s) (cong a (cong f' e)) ≡ cong b (cong f' e))
   → cong→cong∘cong e r s (cong∘cong→cong e r s e') ≡ e') 
     (λ s₁ x → refl) e s e'

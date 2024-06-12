@@ -1,3 +1,4 @@
+{-# OPTIONS --safe #-}
 module Non_Indexed.telescope where 
 
 open import Non_Indexed.datatypes
@@ -183,7 +184,7 @@ mproj∘merge {X = cons S T} {Y = Y} (s , x) y = cong (λ x₁ → (s , (proj₁
 -- replace a cell at position k in telescope X with a telescope Y
 -- provided that cell k in X has type B, and telescope Y can produce a value of such type.
 expandTel
-  : (X : Telescope n) {A : Set} {B : A → Set} (Y : A → Telescope m) 
+  : {A : Set} {B : A → Set} (X : Telescope n) (Y : A → Telescope m) 
     (p : X [ k ]∶Σ[ A ] B)          -- cell k in X has type B
     (f : ∀ {x} → ⟦ Y x ⟧telD → B x) -- telescope Y can yield a value of type B
   → Telescope (k + m + (n ∸ suc k))
@@ -191,7 +192,7 @@ expandTel (cons S X) Y (here s ) f = mergeTel (Y s) X f
 expandTel (cons S X) Y (there p) f = s ∈ S , expandTel (X s) Y (p s) f
 
 expand
-  : {X  : Telescope n} {A : Set} {B : A → Set} {Y : A → Telescope m}
+  : {A : Set} {B : A → Set} {X  : Telescope n} {Y : A → Telescope m}
     (p  : X [ k ]∶Σ[ A ] B)          -- cell k in X has type B
     (f  : ∀ {x} → ⟦ Y x ⟧telD → B x) -- telescope Y can yield a value of type B
     (xs : ⟦ X ⟧telD)                 -- instance for X
@@ -203,7 +204,7 @@ expand (here  x) f (s , xs) ys refl = merge ys xs
 expand (there p) f (s , xs) ys eq   = s , expand (p s) f xs ys eq
 
 shrink
-  : {X : Telescope n} {A : Set} {B : A → Set} {Y : A → Telescope m}
+  : {A : Set} {B : A → Set} {X : Telescope n} {Y : A → Telescope m}
     (p : X [ k ]∶Σ[ A ] B)
     {f : ∀ {x} → ⟦ Y x ⟧telD → B x}
   → ⟦ expandTel X Y p f ⟧telD
@@ -212,7 +213,7 @@ shrink {Y = Y} (here x {E = E}) {f} ts       = f (mproj₁ ts) , mproj₂ {X = Y
 shrink         (there p       )     (s , ts) = s                 , shrink (p s) ts
 
 shrink∘expand
-  : {X  : Telescope n} {A : Set} {B : A → Set} {Y : A → Telescope m}
+  : {A : Set} {B : A → Set} {X  : Telescope n} {Y : A → Telescope m}
     (p  : X [ k ]∶Σ[ A ] B)          -- cell k in X has type B
     {f  : ∀ {x} → ⟦ Y x ⟧telD → B x} -- telescope Y can yield a value of type B
     (xs : ⟦ X ⟧telD)                 -- instance for X

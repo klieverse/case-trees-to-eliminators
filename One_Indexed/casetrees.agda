@@ -1,3 +1,4 @@
+{-# OPTIONS --safe #-}
 module One_Indexed.casetrees where
     
 import Non_Indexed.datatypes as NI
@@ -18,8 +19,9 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl; trans; sym
 open import Data.Vec using (Vec; []; _∷_)
  
 private variable
-  cₙ aₙ iₙ n k : ℕ
-  is : DVec iₙ
+  cₙ aₙ iₙ : ℕ 
+  is  : DVec iₙ
+  n k : ℕ
   ℓ   : Level
 
 -- telescope of equivalent indices
@@ -34,10 +36,9 @@ conTel X (Σ' S C ) i = s ∈ S , conTel X (C s) i
 conTel X (×' i' C) i = μD ∈ X i' , conTel X C i
 
 -- telescope of constructor arguments for constructor description C on X
-telToVec : {is : DVec iₙ}{is₁ is₂ : ⟦ is ⟧Vec}
-    → (t : ⟦ vecTel is₁ is₂ ⟧telD) → is₁ ≡ is₂
+telToVec : {is : DVec iₙ}{is₁ is₂ : ⟦ is ⟧Vec} (t : ⟦ vecTel is₁ is₂ ⟧telD) → is₁ ≡ is₂
 telToVec {is = []    } tt = refl
-telToVec {is = i ∷ is} (t , ts) = Π-create t (telToVec ts) 
+telToVec {is = i ∷ is} (t , ts) = ×-create t (telToVec ts) 
 
 telToCon : {X : ⟦ is ⟧Vec → Set}{C : ConDesc is aₙ}{i : ⟦ is ⟧Vec}
     → (t : ⟦ conTel X C i ⟧telD) → ⟦ C ⟧c X i
@@ -49,7 +50,7 @@ telToCon {C = ×' d' C} (μD , t) = μD , telToCon t
 vecToTel : {is : DVec iₙ}{is₁ is₂ : ⟦ is ⟧Vec}
     → is₁ ≡ is₂ → ⟦ vecTel is₁ is₂ ⟧telD
 vecToTel {is = []    } e = tt
-vecToTel {is = i ∷ is} e = projΠ₁ e , (vecToTel (projΠ₂ e))
+vecToTel {is = i ∷ is} e = proj×₁ e , (vecToTel (proj×₂ e))
 
 conToTel : {X : ⟦ is ⟧Vec → Set}{C : ConDesc is aₙ}{i : ⟦ is ⟧Vec}
     → ⟦ C ⟧c X i → ⟦ conTel X C i ⟧telD
@@ -61,7 +62,7 @@ conToTel {C = ×' i C} (μD , t) = μD , conToTel t
 telToVec∘vecToTel : {is : DVec iₙ}{is₁ is₂ : ⟦ is ⟧Vec} (e : is₁ ≡ is₂) → telToVec (vecToTel e) ≡ e
 telToVec∘vecToTel {is = []    } {is₁ = tt} {is₂ = tt} e = J' (λ _ e' → e' ≡ e) e refl
 telToVec∘vecToTel {is = i ∷ is} {is₁ = (i₁ , is₁)} {is₂ = (i₂ , is₂)} e 
-  = subst (λ f → Π-create (projΠ₁ e) f ≡ e) (sym (telToVec∘vecToTel (projΠ₂ e))) (create∘projΠ e)
+  = subst (λ f → ×-create (proj×₁ e) f ≡ e) (sym (telToVec∘vecToTel (proj×₂ e))) (create∘proj× e)
 
 telToCon∘conToTel : {X : ⟦ is ⟧Vec → Set}{C : ConDesc is aₙ}{i : ⟦ is ⟧Vec}
     → (t : ⟦ C ⟧c X i) → telToCon (conToTel t) ≡ t 
@@ -127,8 +128,8 @@ CTantisym = node (there (λ n → there (λ m → here (n , m , tt)))) (λ where
     
     Unify₀ : Unification antisymΔ₀ 
     Unify₀ = UReorder f1 f0 (λ x → _ , there (λ _ → there (λ _ → here tt))) 
-                (Usolution {X = ⊤} (here (tt , NI.zero')) 
-                    (Usolution₁ {X = ⊤} (there (λ m → here (tt , m))) 
+                (Usolution {A = ⊤} (here (tt , NI.zero')) 
+                    (Usolution₁ {A = ⊤} (there (λ m → here (tt , m))) 
                             (UEnd (m ∈ NI.μ NI.NatD , y ∈ μ ≤D (m , NI.zero' , tt) , b ∈ Lift lzero ⊤ , nil)))) 
 
     antisymΔ₀₀ : Telescope 5
@@ -138,8 +139,8 @@ CTantisym = node (there (λ n → there (λ m → here (n , m , tt)))) (λ where
     
     Unify₀₀ : Unification antisymΔ₀₀
     Unify₀₀ = UReorder f1 f0 (λ x → _ , there (λ _ → here tt)) 
-                (Usolution {X = ⊤} (here (tt , NI.zero')) 
-                    (Usolution₁ {X = ⊤} (here (tt , NI.zero')) 
+                (Usolution {A = ⊤} (here (tt , NI.zero')) 
+                    (Usolution₁ {A = ⊤} (here (tt , NI.zero')) 
                             (UEnd (b ∈ Lift lzero ⊤ , nil))))
 
     antisymΔ₀₁ : Telescope 7
@@ -150,7 +151,7 @@ CTantisym = node (there (λ n → there (λ m → here (n , m , tt)))) (λ where
     Unify₀₁ : Unification antisymΔ₀₁
     Unify₀₁ = UReorder f0 f0 (λ _ → _ , there (λ _ → here tt)) 
                 (UReorder f2 f0 (λ x → _ , there (λ _ → there (λ _ → here tt))) 
-                    (Usolution {X = ⊤} (there (λ m' → here (tt , NI.suc' m'))) 
+                    (Usolution {A = ⊤} (there (λ m' → here (tt , NI.suc' m'))) 
                         (UReorder f2 f0 (λ x → _ , there (λ _ → here tt)) 
                             (UConflict (there (λ m → there (λ n → here n))) (λ d ())  
                                     (UEnd ( m ∈ NI.μ NI.NatD , n ∈ NI.μ NI.NatD , b ∈ ⊥ , y ∈ μ ≤D (m , n , tt) 
@@ -166,10 +167,10 @@ CTantisym = node (there (λ n → there (λ m → here (n , m , tt)))) (λ where
     Unify₁ : Unification antisymΔ₁ 
     Unify₁ = UReorder f0 f0 (λ _ → _ , there (λ _ → there (λ _ → here tt))) 
                 (UReorder f2 f0 (λ _ → _ , there (λ _ → there (λ _ → there (λ _ → here tt)))) 
-                    (Usolution {X = ⊤} (there (λ n' → here (tt , NI.suc' n'))) 
+                    (Usolution {A = ⊤} (there (λ n' → here (tt , NI.suc' n'))) 
                         (UReorder f1 f0 ((λ _ → _ , there (λ _ → here tt))) 
                             (UReorder f3 f0 (λ _ → _ , there (λ _ → here tt)) 
-                                (Usolution {X = ⊤} (there (λ n' → there (λ m' → here (tt , NI.suc' m')))) 
+                                (Usolution {A = ⊤} (there (λ n' → there (λ m' → here (tt , NI.suc' m')))) 
                                         (UEnd (n' ∈ NI.μ NI.NatD , m' ∈ NI.μ NI.NatD , x ∈ μ ≤D (n' , m' , tt) , 
                                             y ∈ μ ≤D (NI.suc' m' , NI.suc' n' , tt) , b ∈ (antisymPx (n' , m' , tt) x × 
                                             Below antisymPx (n' , m' , tt) x) × Lift lzero ⊤ , nil )))))))
@@ -184,7 +185,7 @@ CTantisym = node (there (λ n → there (λ m → here (n , m , tt)))) (λ where
     Unify₁₀ = UConflict (there (λ n' → (there (λ m' → (there (λ x → (there (λ m'' → here m')))))))) (λ d ())
                     (UReorder f1 f0 (λ _ → _ , there (λ _ → there (λ _ → here tt))) 
                         (UReorder f2 f0 (λ _ → _ , there (λ _ → there (λ _ → there (λ _ → here tt)))) 
-                            (Usolution₁ {X = ⊤} (there (λ n' → here (tt , NI.suc' n'))) 
+                            (Usolution₁ {A = ⊤} (there (λ n' → here (tt , NI.suc' n'))) 
                                 (UEnd (n' ∈ NI.μ NI.NatD , m' ∈ NI.μ NI.NatD , x ∈ μ ≤D (n' , m' , tt) , b ∈ ⊥ , 
                                     b ∈ (antisymPx (n' , m' , tt) x × Below antisymPx (n' , m' , tt) x) 
                                     × Lift lzero ⊤ , nil)))))
@@ -203,8 +204,8 @@ CTantisym = node (there (λ n → there (λ m → here (n , m , tt)))) (λ where
                         (UReorder f5 f0 (λ _ → _ , there (λ _ → there (λ _ → here tt))) 
                             (UInjectivity (there (λ n' → there (λ n'' → here (n' , n'')))) (λ _ → refl) (λ _ → refl) 
                                 (UInjectivity (there (λ n' → there (λ n'' → there (λ e → there (λ m' → there (λ m'' → here (m' , m''))))))) (λ _ → refl) (λ _ → refl) 
-                                    (Usolution₁ {X = ⊤} (there (λ n' → here (tt , n'))) 
-                                        (Usolution₁ {X = ⊤} (there (λ n' → there (λ m' → here (tt , m')))) 
+                                    (Usolution₁ {A = ⊤} (there (λ n' → here (tt , n'))) 
+                                        (Usolution₁ {A = ⊤} (there (λ n' → there (λ m' → here (tt , m')))) 
                                                 (UEnd (n' ∈ NI.μ NI.NatD , m' ∈ NI.μ NI.NatD , x ∈ μ ≤D (n' , m' , tt) , y ∈ μ ≤D (m' , n' , tt) , 
                                                     b ∈ (antisymPx (n' , m' , tt) x × Below antisymPx (n' , m' , tt) x) 
                                                     × Lift lzero ⊤ , nil)))))))))
@@ -245,8 +246,8 @@ CTNat₁-K-like-elim P = node (there (λ mzero → there (λ msuc → there (λ 
             e₂ ∈ NI.zero' ≡ n₀ , b ∈ Lift lzero ⊤ , nil 
 
     Unify₀ : Unification Δ₀ 
-    Unify₀ = Usolution {X = ⊤} (there (λ mzero → there (λ msuc → here (tt , NI.zero')))) 
-                (UInjectivity {s = λ _ → NI.zero'} {t = λ _ → NI.zero'} (there (λ mzero → there (λ msuc → here tt))) 
+    Unify₀ = Usolution {A = ⊤} (there (λ mzero → there (λ msuc → here (tt , NI.zero')))) 
+                (UInjectivity {x = λ _ → NI.zero'} {y = λ _ → NI.zero'} (there (λ mzero → there (λ msuc → here tt))) 
                     (λ _ → refl) (λ _ → refl) 
                         (UEnd (mzero ∈ (P NI.zero' zero₁') , msuc ∈ ((n₀ : NI.μ NI.NatD) (n₁ : μ Nat₁D (n₀ , (n₀ , tt))) → 
                             P n₀ n₁ → P (NI.suc' n₀) (suc₁' n₀ n₀ n₁)) , b ∈ Lift lzero ⊤ , nil)))
@@ -260,10 +261,10 @@ CTNat₁-K-like-elim P = node (there (λ mzero → there (λ msuc → there (λ 
     Unify₁ : Unification Δ₁
     Unify₁ = UReorder f4 f0 (λ _ → _ , there (λ _ → there (λ _ → here tt))) 
                 (UReorder f2 f0 (λ _ → _ , there λ _ → here tt) 
-                    (Usolution {X = ⊤} (there (λ _ → there (λ _ → there (λ n₁ → here (tt , NI.suc' n₁))))) 
+                    (Usolution {A = ⊤} (there (λ _ → there (λ _ → there (λ n₁ → here (tt , NI.suc' n₁))))) 
                         (UReorder f4 f0 (λ _ → _ , there (λ _ → here tt)) 
                             (UInjectivity (there (λ mzero → there (λ msuc → there (λ n₁ → there (λ n₂ → here (n₁ , n₂)))))) (λ _ → refl) (λ _ → refl) 
-                                (Usolution₁ {X = ⊤} (there (λ mzero → there (λ msuc → there (λ n₁ → here (tt , n₁))))) 
+                                (Usolution₁ {A = ⊤} (there (λ mzero → there (λ msuc → there (λ n₁ → here (tt , n₁))))) 
                                         (UEnd (mzero ∈ (P NI.zero' zero₁') , msuc ∈ ((n₀ : NI.μ NI.NatD) (n₁ : μ Nat₁D (n₀ , (n₀ , tt))) → P n₀ n₁ → P (NI.suc' n₀) (suc₁' n₀ n₀ n₁)) , 
                                                 n₀ ∈ NI.μ NI.NatD , n ∈ μ Nat₁D (n₀ , (n₀ , tt)) , b ∈ (Nat₁-K-like-elimPx P (n₀ , n₀ , tt) n × Below (Nat₁-K-like-elimPx P) (n₀ , n₀ , tt) n) × Lift lzero ⊤ , nil)))))))
  

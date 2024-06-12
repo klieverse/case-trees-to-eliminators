@@ -1,3 +1,4 @@
+{-# OPTIONS --safe #-}
 module Non_Indexed.translation where 
 
 open import Non_Indexed.datatypes

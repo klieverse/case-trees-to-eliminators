@@ -1,3 +1,4 @@
+{-# OPTIONS --safe #-}
 module One_Indexed.unify where
 
 open import Non_Indexed.datatypes as NI
@@ -21,86 +22,83 @@ open import Relation.Nullary using (Dec; yes; no; ¬_)
 open import Data.Vec using (Vec; []; _∷_)
 
 private variable
-  n m k : ℕ
+  n k cₙ : ℕ
+  A : Set
+  Δ : Telescope n
 
 data Unification : (Δ : Telescope n) → Set₁ where 
     -- end of unification
     UEnd : (Δ : Telescope n) → Unification Δ
 
     -- (x : X) (x ≡ t) ≃ ()
-    Usolution :  {Δ : Telescope n} {X : Set} {A : X → Set}
-        → (p : Δ [ k ]∶Σ[ Σ[ x ∈ X ] (A x) ] (λ xa → A (proj₁ xa)) ∶ (λ t x → (proj₂ t) ≡ x)) 
+    Usolution : {B : A → Set}
+        → (p : Δ [ k ]∶Σ[ Σ[ a ∈ A ] (B a) ] (λ t → B (proj₁ t)) ∶ (λ t x → (proj₂ t) ≡ x))
         → Unification (doSolutionTel p)
         → Unification Δ
 
     -- (x : X) (t ≡ x) ≃ ()
-    Usolution₁ :  {Δ : Telescope n} {X : Set} {X : Set} {A : X → Set}
-        → (p : Δ [ k ]∶Σ[ Σ[ x ∈ X ] (A x) ] (λ xa → A (proj₁ xa)) ∶ (λ t x → x ≡ (proj₂ t)))
+    Usolution₁ : {B : A → Set}
+        → (p : Δ [ k ]∶Σ[ Σ[ a ∈ A ] (B a) ] (λ t → B (proj₁ t)) ∶ (λ t x → x ≡ (proj₂ t))) 
         → Unification (doSolutionTel₁ p)
         → Unification Δ
     
     -- (t ≡ t) ≃ ()
-    UDeletion : {Δ : Telescope n} {D : Set} {X : D → Set} 
-        → {t : (d : D) → X d} (p : Δ [ k ]∶Σ[ D ] (λ d → t d ≡ t d))
+    UDeletion : {B : A → Set}{f : (a : A) → B a}  
+        → (p : Δ [ k ]∶Σ[ A ] (λ a → f a ≡ f a))
         → Unification (doDeletionTel p)
         → Unification Δ
 
     -- (c s ≡ c t) ≃ (c ≡ t)
-    UInjectivity : {j : ℕ} {Δ : Telescope n} {D : NI.DataDesc m}{D' : Set}
-        → {s t : D' → NI.μ D} (p : Δ [ k ]∶Σ[ D' ] (λ d' → (s d') ≡ (t d')))
-        → (e' : (d : D') → conᵢ (s d) ≡ conᵢ (t d))
-        → (eℕ : (d : D') → conₙ (s d) ≡ j)
-        → Unification (doinjectivityTel e' eℕ p)
+    UInjectivity : {D : NI.DataDesc cₙ}
+        → {x y : A → NI.μ D} (p : Δ [ k ]∶Σ[ A ] (λ a → (x a) ≡ (y a)))
+        → (f : (a : A) → conᵢ (x a) ≡ conᵢ (y a))
+        → {cₙ' : ℕ} (eℕ : (a : A) → conₙ (x a) ≡ cₙ')
+        → Unification (doInjectivityTel f eℕ p)
         → Unification Δ
 
-    -- (c₁ s ≡ c₂ t) ≃ ⊥
-    UConflict : {Δ : Telescope n} {D : NI.DataDesc m}{D' : Set}
-        → {s t : D' → NI.μ D} (p : Δ [ k ]∶Σ[ D' ] (λ d' → (s d') ≡ (t d')))
-        → (e' : (d : D') → ¬ (conᵢ (s d) ≡ conᵢ (t d)))
-        → Unification (doConflictTel p e')
+    -- (c₁ x ≡ c₂ y) ≃ ⊥
+    UConflict : {D : NI.DataDesc cₙ}{x y : A → NI.μ D} 
+        → (p : Δ [ k ]∶Σ[ A ] (λ a → x a ≡ y a))
+        → (f : (a : A) → ¬ (conᵢ (x a) ≡ conᵢ (y a)))
+        → Unification (doConflictTel p f)
         → Unification Δ
 
     -- move item at goal back if it is not dependent on items after split
-    UReorder : {Δ : Telescope n} (split : Fin n) (goal : Fin k)
-        → (p : (x : ⟦ proj₁ (splitTel split Δ) ⟧telD) 
+    UReorder : (split : Fin n) (goal : Fin k) (p : (x : ⟦ proj₁ (splitTel split Δ) ⟧telD) 
             → (Σ[ X ∈ Set ] ((proj₂ (splitTel split Δ)) x) [ k ]∶Σ[ ⊤ ] (λ _ → X)))
         → Unification (reorderTel split Δ goal p) 
         → Unification Δ
 
-unifyTel : {i : ℕ} {Δ : Telescope i} (u : Unification Δ) 
-    → Σ ℕ Telescope
+unifyTel : (u : Unification Δ) → Σ ℕ Telescope
 unifyTel (UEnd Δ) = _ , Δ
 unifyTel (Usolution p u) = unifyTel u
 unifyTel (Usolution₁ p u) = unifyTel u
 unifyTel (UDeletion p u) = unifyTel u
 unifyTel (UInjectivity p e' eℕ u) = unifyTel u
-unifyTel (UConflict p e' u) = unifyTel u
+unifyTel (UConflict p f u) = unifyTel u
 unifyTel (UReorder split goal p u) = unifyTel u
 
-unify : {i : ℕ} {Δ : Telescope i} (u : Unification Δ) (xs : ⟦ Δ ⟧telD)
-    → ⟦ proj₂ (unifyTel u) ⟧telD
+unify : (u : Unification Δ) (xs : ⟦ Δ ⟧telD) → ⟦ proj₂ (unifyTel u) ⟧telD
 unify (UEnd _) xs = xs
 unify (Usolution p u) xs = unify u (update₂ p (λ _ → nil) (λ xa → solution) (λ xa → solution') (λ xa → solution'∘solution) xs)
 unify (Usolution₁ p u) xs = unify u (update₂ p (λ _ → nil) (λ xa → solution₁) (λ xa → solution₁') (λ xa → solution₁'∘solution₁) xs)
 unify (UDeletion p u) xs = unify u (update₁ p (λ _ → nil) (λ xa → deletion) (λ xa → deletion') (λ xa → deletion'∘deletion) xs)
 unify (UInjectivity p e' eℕ u) xs = unify u (doInjectivity e' eℕ p xs)
-unify (UConflict {s = s} {t = t} p e' u) xs = unify u (update₁ p (λ _ → cons ⊥ (λ b → nil)) (λ d' → conflict (s d') (t d') (e' d')) 
-    (λ d' → conflict' (s d') (t d') (e' d')) (λ d' → conflict'∘conflict (s d') (t d') (e' d')) xs)
+unify (UConflict p f u) xs = unify u (update₁ p (λ _ → cons ⊥ (λ b → nil)) (λ a → conflict (f a)) 
+    (λ a → conflict' (f a)) (λ a → conflict'∘conflict (f a)) xs)
 unify (UReorder split goal p u) xs = unify u (reorder split goal p xs)
 
-unify' : {i : ℕ} {Δ : Telescope i} (u : Unification Δ) (xs : ⟦ proj₂ (unifyTel u) ⟧telD)
-    → ⟦ Δ ⟧telD
+unify' : (u : Unification Δ) (xs : ⟦ proj₂ (unifyTel u) ⟧telD) → ⟦ Δ ⟧telD
 unify' (UEnd _) xs = xs
 unify' (Usolution p u) xs = update₂' p (λ _ → nil) (λ xa → solution) (λ xa → solution') (λ xa → solution'∘solution) (unify' u xs)
 unify' (Usolution₁ p u) xs = update₂' p (λ _ → nil) (λ xa → solution₁) (λ xa → solution₁') (λ xa → solution₁'∘solution₁) (unify' u xs)
 unify' (UDeletion p u) xs = update₁' p (λ _ → nil) (λ xa → deletion) (λ xa → deletion') (λ xa → deletion'∘deletion) (unify' u xs)
 unify' (UInjectivity p e' eℕ u) xs = doInjectivity' e' eℕ p (unify' u xs)
-unify' (UConflict {s = s} {t = t} p e' u) xs = update₁' p (λ _ → cons ⊥ (λ b → nil)) (λ d' → conflict (s d') (t d') (e' d')) 
-    (λ d' → conflict' (s d') (t d') (e' d')) (λ d' → conflict'∘conflict (s d') (t d') (e' d')) (unify' u xs)
+unify' (UConflict p f u) xs = update₁' p (λ _ → cons ⊥ (λ b → nil)) (λ a → conflict (f a)) 
+    (λ a → conflict' (f a)) (λ a → conflict'∘conflict (f a)) (unify' u xs)
 unify' (UReorder split goal p u) xs = reorder' split goal p (unify' u xs)
 
-unify'∘unify : {i : ℕ} {Δ : Telescope i} (u : Unification Δ) (xs : ⟦ Δ ⟧telD)
-    → unify' u (unify u xs) ≡ xs
+unify'∘unify : (u : Unification Δ) (xs : ⟦ Δ ⟧telD) → unify' u (unify u xs) ≡ xs
 unify'∘unify (UEnd _) xs = refl
 unify'∘unify (Usolution p u) xs = subst (λ xs' → update₂' p (λ _ → nil) (λ xa → solution) (λ xa → solution') (λ xa → solution'∘solution) xs' ≡ xs) 
     (sym (unify'∘unify u ((update₂ p (λ _ → nil) (λ xa → solution) (λ xa → solution') (λ xa → solution'∘solution) xs)))) 
@@ -112,12 +110,12 @@ unify'∘unify (UDeletion p u) xs = subst (λ xs' → update₁' p (λ _ → nil
     (sym (unify'∘unify u ((update₁ p (λ _ → nil) (λ xa → deletion) (λ xa → deletion') (λ xa → deletion'∘deletion) xs)))) 
     (update₁'∘update₁ p (λ _ → nil) (λ xa → deletion) (λ xa → deletion') (λ xa → deletion'∘deletion) xs)
 unify'∘unify (UInjectivity p e' eℕ u) xs = subst (λ xs' → doInjectivity' e' eℕ p xs' ≡ xs) (sym (unify'∘unify u (doInjectivity e' eℕ p xs))) (doInjectivity'∘doInjectivity e' eℕ p xs)
-unify'∘unify (UConflict {s = s} {t = t} p e' u) xs = subst (λ xs' → update₁' p (λ _ → cons ⊥ (λ b → nil)) (λ d' → conflict (s d') (t d') (e' d')) 
-    (λ d' → conflict' (s d') (t d') (e' d')) (λ d' → conflict'∘conflict (s d') (t d') (e' d')) xs' ≡ xs) 
-    (sym (unify'∘unify u ((update₁ p (λ _ → cons ⊥ (λ b → nil)) (λ d' → conflict (s d') (t d') (e' d')) 
-    (λ d' → conflict' (s d') (t d') (e' d')) (λ d' → conflict'∘conflict (s d') (t d') (e' d')) xs)))) 
-    (update₁'∘update₁ p (λ _ → cons ⊥ (λ b → nil)) (λ d' → conflict (s d') (t d') (e' d')) 
-    (λ d' → conflict' (s d') (t d') (e' d')) (λ d' → conflict'∘conflict (s d') (t d') (e' d')) xs) 
+unify'∘unify (UConflict p f u) xs = subst (λ xs' → update₁' p (λ _ → cons ⊥ (λ b → nil)) (λ a → conflict (f a)) 
+    (λ a → conflict' (f a)) (λ a → conflict'∘conflict (f a)) xs' ≡ xs) 
+    (sym (unify'∘unify u ((update₁ p (λ _ → cons ⊥ (λ b → nil)) (λ a → conflict (f a)) 
+    (λ a → conflict' (f a)) (λ a → conflict'∘conflict (f a)) xs)))) 
+    (update₁'∘update₁ p (λ _ → cons ⊥ (λ b → nil)) (λ a → conflict (f a)) 
+    (λ a → conflict' (f a)) (λ a → conflict'∘conflict (f a)) xs) 
 unify'∘unify (UReorder split goal p u) xs = subst (λ xs' → reorder' split goal p xs' ≡ xs) (sym (unify'∘unify u (reorder split goal p xs))) (reorder'∘reorder split goal p xs)
 
 
@@ -137,7 +135,7 @@ CTSucTel X = n ∈ NI.μ NI.NatD , m ∈ NI.μ NI.NatD , x ∈ X , v ∈ OI.μ (
 UnifySuc : (X : Set) → Unification (CTSucTel X)
 UnifySuc X = UReorder (f2) (f0) (λ x → _ , (there (λ _ → there (λ _ → here tt)))) 
             (UInjectivity (there (λ n → there (λ m → here (m , n)))) (λ _ → refl) (λ _ → refl) 
-                (Usolution₁ {X = ⊤} (there (λ n → here (tt , n))) 
+                (Usolution₁ {A = ⊤} (there (λ n → here (tt , n))) 
                     (UEnd (n ∈ NI.μ NI.NatD , x ∈ X , v ∈ OI.μ (VecD X) (n , tt) , nil))))
 
 

@@ -1,3 +1,4 @@
+{-# OPTIONS --safe #-}
 module One_Indexed.translation where 
 
 import Non_Indexed.datatypes as NI

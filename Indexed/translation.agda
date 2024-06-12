@@ -1,3 +1,4 @@
+{-# OPTIONS --safe #-}
 module Indexed.translation where 
 
 open import Non_Indexed.telescope

@@ -1,3 +1,4 @@
+{-# OPTIONS --safe #-}
 module Non_Indexed.casetrees where
     
 open import Non_Indexed.datatypes
@@ -42,6 +43,18 @@ telToCon∘conToTel
 telToCon∘conToTel {C = one'   } tt      = refl
 telToCon∘conToTel {C = Σ' S C } (s , d) = cong (s ,_) (telToCon∘conToTel d) 
 telToCon∘conToTel {C = ind×' C} (x , d) = cong (x ,_) (telToCon∘conToTel d)
+
+-- example expanding natural numbers
+expandNatTel : ⟦ n ∈ μ NatD , e ∈ n ≡ zero' , nil ⟧telD → Σ ℕ Telescope 
+expandNatTel (zero'  , _) = _ , e ∈ _≡_ {A = μ NatD} zero' zero'  , nil
+expandNatTel (suc' n , _) = _ , n ∈ μ NatD , e ∈ _≡_  {A = μ NatD} (suc' n) zero' , nil
+
+expandNat : (xs : ⟦ n ∈ μ NatD , e ∈ n ≡ zero' , nil ⟧telD) → ⟦ proj₂ (expandNatTel xs) ⟧telD
+expandNat (zero'  , e , tt) = expand {X = n ∈ μ NatD , e ∈ n ≡ zero' , nil} {Y = λ _ → conTel (μ NatD) (proj₂ (NatD f0))}
+  (here tt) (λ args → ⟨ f0 , telToCon {X = μ NatD} args ⟩) (zero' , e , tt) tt refl
+expandNat (suc' n , e , tt) = expand {X = n ∈ μ NatD , e ∈ n ≡ zero' , nil} {Y = λ _ → conTel (μ NatD) (proj₂ (NatD f1))}
+  (here tt) (λ args → ⟨ f1 , telToCon {X = μ NatD} {C = proj₂ (NatD f1)} args ⟩) (suc' n , e , tt) (n , tt) refl
+
 
 
 -- representation of a case tree
